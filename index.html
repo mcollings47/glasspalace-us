@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlassPalace — Civic Intelligence Platform</title>
+<meta name="description" content="Track legislation, grade your representatives, and defend the Constitution with GlassPalace.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  :root {
+    --navy: #0a0e27;
+    --navy-light: #141832;
+    --navy-mid: #1e2448;
+    --blue: #3b82f6;
+    --blue-dark: #2563eb;
+    --blue-glow: rgba(59, 130, 246, 0.15);
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --gold: #fbbf24;
+    --text: #e0e7ef;
+    --text-dim: #8892a8;
+    --border: #2a2f4e;
+    --card: #141832;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Layout */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .main { flex: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%; }
+
+  /* Header */
+  .header {
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    padding: 0 1.5rem;
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .logo { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+  .logo-icon { font-size: 1.5rem; }
+  .logo-text { font-weight: 800; font-size: 1.2rem; color: #fff; letter-spacing: -0.02em; }
+  .logo-badge { font-size: 0.6rem; background: var(--blue); color: #fff; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .nav { display: flex; gap: 0.25rem; }
+  .nav-btn {
+    padding: 0.5rem 1rem; border: none; background: transparent;
+    color: var(--text-dim); font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; border-radius: 8px; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { color: var(--text); background: var(--navy-light); }
+  .nav-btn.active { color: #fff; background: var(--navy-mid); }
+  .search-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--navy-light); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.4rem 0.8rem; width: 260px;
+  }
+  .search-bar input {
+    background: transparent; border: none; color: var(--text);
+    font-size: 0.85rem; width: 100%; outline: none; font-family: inherit;
+  }
+  .search-bar input::placeholder { color: var(--text-dim); }
+
+  /* Cards */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #3a4068; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { text-align: center; padding: 1.25rem; }
+  .stat-value { font-size: 2rem; font-weight: 800; color: #fff; }
+  .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* CFS Score Badge */
+  .cfs-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; border-radius: 50%;
+    font-weight: 800; font-size: 0.95rem; color: #fff;
+    flex-shrink: 0;
+  }
+  .cfs-badge.high { background: linear-gradient(135deg, #10b981, #059669); }
+  .cfs-badge.mid { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .cfs-badge.low { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  .cfs-badge.none { background: var(--navy-mid); color: var(--text-dim); font-size: 0.7rem; }
+  .cfs-badge-sm { width: 36px; height: 36px; font-size: 0.8rem; }
+
+  /* Trend indicators */
+  .trend { font-size: 0.75rem; font-weight: 600; }
+  .trend.rising { color: var(--green); }
+  .trend.falling { color: var(--red); }
+  .trend.stable { color: var(--text-dim); }
+  .trend.new { color: var(--blue); }
+
+  /* Party badges */
+  .party-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .party-R { background: #ef4444; }
+  .party-D { background: #3b82f6; }
+  .party-I { background: #8b5cf6; }
+  .party-L { background: #f59e0b; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .status-introduced { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .status-committee { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .status-passed_house, .status-passed_senate { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .status-passed_both { background: rgba(16,185,129,0.15); color: #34d399; }
+  .status-signed { background: rgba(16,185,129,0.2); color: #10b981; }
+  .status-vetoed { background: rgba(239,68,68,0.15); color: #f87171; }
+  .status-active, .status-enacted { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-weight: 600; }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(42,47,78,0.5); font-size: 0.9rem; }
+  tr:hover td { background: rgba(59, 130, 246, 0.03); }
+  .clickable { cursor: pointer; }
+
+  /* Filters */
+  .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+  .filter-select {
+    background: var(--navy-light); border: 1px solid var(--border);
+    color: var(--text); padding: 0.5rem 0.75rem; border-radius: 8px;
+    font-size: 0.85rem; font-family: inherit; cursor: pointer; outline: none;
+  }
+  .filter-select:focus { border-color: var(--blue); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .page-btn {
+    padding: 0.4rem 0.8rem; border: 1px solid var(--border); background: var(--navy-light);
+    color: var(--text); border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit;
+  }
+  .page-btn:hover { border-color: var(--blue); }
+  .page-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Detail page */
+  .detail-header { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 2rem; }
+  .detail-photo {
+    width: 120px; height: 120px; border-radius: 16px; object-fit: cover;
+    background: var(--navy-mid); border: 2px solid var(--border);
+  }
+  .detail-info h1 { font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 0.25rem; }
+  .detail-meta { display: flex; gap: 1rem; flex-wrap: wrap; color: var(--text-dim); font-size: 0.9rem; }
+  .detail-meta span { display: flex; align-items: center; gap: 0.3rem; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .bill-title { font-weight: 600; color: #fff; }
+  .bill-number { color: var(--blue); font-weight: 600; font-size: 0.85rem; }
+
+  /* CFS Meter */
+  .cfs-meter { margin: 1rem 0; }
+  .cfs-bar-bg { height: 12px; background: var(--navy-mid); border-radius: 6px; overflow: hidden; }
+  .cfs-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; }
+  .cfs-bar-fill.high { background: linear-gradient(90deg, #10b981, #34d399); }
+  .cfs-bar-fill.mid { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .cfs-bar-fill.low { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .cfs-components { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  .cfs-component { text-align: center; padding: 0.75rem; background: var(--navy); border-radius: 8px; }
+  .cfs-component-value { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .cfs-component-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 3rem; color: var(--text-dim); }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Back button */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.8rem; background: var(--navy-light); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    font-family: inherit; margin-bottom: 1.5rem;
+  }
+  .back-btn:hover { color: var(--text); border-color: #3a4068; }
+
+  /* Voting position */
+  .vote-yea { color: var(--green); font-weight: 600; }
+  .vote-nay { color: var(--red); font-weight: 600; }
+  .vote-present { color: var(--amber); }
+  .vote-not_voting { color: var(--text-dim); }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border); padding: 2rem 1.5rem;
+    text-align: center; color: var(--text-dim); font-size: 0.8rem;
+  }
+
+  /* Waitlist section */
+  .waitlist-banner {
+    background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 2rem; text-align: center; margin-bottom: 2rem;
+  }
+  .waitlist-banner h2 { color: #fff; font-size: 1.3rem; margin-bottom: 0.5rem; }
+  .waitlist-banner p { color: var(--text-dim); margin-bottom: 1rem; }
+  .waitlist-form { display: flex; gap: 0.5rem; justify-content: center; max-width: 400px; margin: 0 auto; }
+  .waitlist-input {
+    flex: 1; padding: 0.6rem 1rem; background: var(--navy); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none;
+  }
+  .waitlist-input:focus { border-color: var(--blue); }
+  .waitlist-submit {
+    padding: 0.6rem 1.5rem; background: var(--blue); color: #fff; border: none;
+    border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .waitlist-submit:hover { background: var(--blue-dark); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-grid { grid-template-columns: 1fr; }
+    .cfs-components { grid-template-columns: repeat(2, 1fr); }
+    .header-inner { flex-wrap: wrap; height: auto; padding: 0.75rem 0; gap: 0.5rem; }
+    .search-bar { width: 100%; order: 3; }
+    .nav { order: 2; }
+    .detail-header { flex-direction: column; align-items: center; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+const API_BASE = 'https://vsocmojximnnlrzdmeoz.supabase.co/functions/v1/civic-api';
+const SUPABASE_URL = 'https://vsocmojximnnlrzdmeoz.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzb2Ntb2p4aW1ubmxyemRtZW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTE2MjgsImV4cCI6MjA5MDEyNzYyOH0.y3fC43nOBv4ZMfiaPzPDvVZxwlERS_IFdclHZ1jbQv0';
+
+async function api(params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${API_BASE}?${qs}`);
+  return res.json();
+}
+
+// CFS helpers
+function cfsLevel(score) {
+  if (score === null || score === undefined) return 'none';
+  if (score >= 70) return 'high';
+  if (score >= 40) return 'mid';
+  return 'low';
+}
+
+function trendIcon(trend) {
+  switch (trend) {
+    case 'rising': return '\u2191';
+    case 'falling': return '\u2193';
+    case 'stable': return '\u2192';
+    case 'new': return '\u2605';
+    default: return '';
+  }
+}
+
+function CfsBadge({ score, small }) {
+  const level = cfsLevel(score);
+  const cls = `cfs-badge ${level}${small ? ' cfs-badge-sm' : ''}`;
+  return <div className={cls}>{score !== null && score !== undefined ? Math.round(score) : 'N/A'}</div>;
+}
+
+function PartyBadge({ party }) {
+  return <span className={`party-badge party-${party || 'I'}`}>{party || '?'}</span>;
+}
+
+function StatusBadge({ status }) {
+  const cls = `status-badge status-${(status || 'introduced').replace(/\s+/g, '_').toLowerCase()}`;
+  return <span className={cls}>{status || 'Unknown'}</span>;
+}
+
+function VotePosition({ position }) {
+  return <span className={`vote-${position}`}>{position.replace('_', ' ')}</span>;
+}
+
+// ======= HEADER =======
+function Header({ view, setView, onSearch }) {
+  const [query, setQuery] = useState('');
+  return (
+    <header className="header">
+      <div className="header-inner">
+        <div className="logo" onClick={() => setView({ page: 'dashboard' })}>
+          <span className="logo-icon">\ud83c\udfd4</span>
+          <span className="logo-text">GlassPalace</span>
+          <span className="logo-badge">Beta</span>
+        </div>
+        <nav className="nav">
+          <button className={`nav-btn ${view.page === 'dashboard' ? 'active' : ''}`} onClick={() => setView({ page: 'dashboard' })}>Dashboard</button>
+          <button className={`nav-btn ${view.page === 'bills' ? 'active' : ''}`} onClick={() => setView({ page: 'bills' })}>Bills</button>
+          <button className={`nav-btn ${view.page === 'legislators' ? 'active' : ''}`} onClick={() => setView({ page: 'legislators' })}>Representatives</button>
+        </nav>
+        <div className="search-bar">
+          <span>\ud83d\udd0d</span>
+          <input
+            placeholder="Search bills or reps..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && query.trim()) onSearch(query.trim()); }}
+          />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ======= DASHBOARD =======
+function Dashboard({ setView }) {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'stats' }).then(d => { setStats(d); setLoading(false); });
+  }, []);
+
+  if (loading) return <div className="loading"><div className="spinner"></div><p style={{marginTop:'1rem'}}>Loading dashboard...</p></div>;
+
+  const { counts = {}, top_cfs = [], bottom_cfs = [], recent_bills = [] } = stats || {};
+  const noData = counts.legislators === 0;
+
+  return (
+    <div>
+      {noData && (
+        <div className="waitlist-banner">
+          <h2>Welcome to GlassPalace Civic Platform</h2>
+          <p>Data ingestion is pending. Once loaded, you'll see live legislation tracking, representative grades, and more.</p>
+          <p style={{fontSize: '0.8rem', color: 'var(--text-dim)'}}>If you're an admin, open the <strong>admin-ingest.html</strong> page to trigger data loading.</p>
+        </div>
+      )}
+
+      <div className="stats-grid">
+        <div className="card stat-card">
+          <div className="stat-value">{counts.legislators || 0}</div>
+          <div className="stat-label">Representatives</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value">{counts.bills || 0}</div>
+          <div className="stat-label">Bills Tracked</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value">{counts.votes || 0}</div>
+          <div className="stat-label">Roll Call Votes</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value">{counts.vote_records ? counts.vote_records.toLocaleString() : 0}</div>
+          <div className="stat-label">Individual Votes</div>
+        </div>
+      </div>
+
+      <div style={{display:'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">\ud83c\udfc6 Top Constitutional Fidelity</span>
+            <button className="nav-btn" onClick={() => setView({ page: 'legislators', sort: 'cfs_score', order: 'desc' })}>View All</button>
+          </div>
+          {top_cfs.length === 0 ? (
+            <p style={{color:'var(--text-dim)', fontSize:'0.9rem'}}>CFS scores will appear after data ingestion and calculation.</p>
+          ) : (
+            top_cfs.map(leg => (
+              <div key={leg.id} className="clickable" onClick={() => setView({ page: 'legislator', id: leg.id })} style={{display:'flex', alignItems:'center', gap:'0.75rem', padding:'0.5rem 0', borderBottom:'1px solid var(--border)'}}>
+                <CfsBadge score={leg.cfs_score} small />
+                <PartyBadge party={leg.party} />
+                <span style={{flex:1, color:'#fff', fontWeight:500}}>{leg.full_name}</span>
+                <span style={{color:'var(--text-dim)', fontSize:'0.8rem'}}>{leg.state_code} \u00b7 {leg.chamber}</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">\ud83d\udcdc Recent Legislation</span>
+            <button className="nav-btn" onClick={() => setView({ page: 'bills' })}>View All</button>
+          </div>
+          {recent_bills.length === 0 ? (
+            <p style={{color:'var(--text-dim)', fontSize:'0.9rem'}}>Bills will appear after data ingestion.</p>
+          ) : (
+            recent_bills.map(bill => (
+              <div key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)'}}>
+                <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                  <span className="bill-number">{bill.bill_number}</span>
+                  <StatusBadge status={bill.status} />
+                </div>
+                <div style={{fontSize:'0.85rem', color:'var(--text-dim)', marginTop:'0.2rem'}}>{bill.short_title || bill.title}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="waitlist-banner" style={{marginTop:'2rem'}}>
+        <h2>Get Early Access</h2>
+        <p>Be the first to know when new features launch. Join our waitlist.</p>
+        <WaitlistForm />
+      </div>
+    </div>
+  );
+}
+
+// ======= WAITLIST FORM =======
+function WaitlistForm() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('');
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!email) return;
+    setStatus('sending');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/waitlist-signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, product: 'civic', source: 'civic-app' }),
+      });
+      const data = await res.json();
+      setStatus(data.status === 'already_registered' ? 'already' : 'success');
+      setEmail('');
+    } catch {
+      setStatus('error');
+    }
+  }
+
+  if (status === 'success') return <p style={{color:'var(--green)', fontWeight:600}}>You're on the list!</p>;
+  if (status === 'already') return <p style={{color:'var(--amber)', fontWeight:600}}>You're already signed up!</p>;
+
+  return (
+    <form className="waitlist-form" onSubmit={submit}>
+      <input className="waitlist-input" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
+      <button className="waitlist-submit" type="submit" disabled={status === 'sending'}>{status === 'sending' ? 'Joining...' : 'Join Waitlist'}</button>
+    </form>
+  );
+}
+
+// ======= BILLS LIST =======
+function BillsList({ setView }) {
+  const [bills, setBills] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ page: 1, status: 'all', search: '' });
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = { route: 'bills', page: filters.page, limit: 20 };
+    if (filters.status !== 'all') params.status = filters.status;
+    if (filters.search) params.search = filters.search;
+    api(params).then(d => {
+      setBills(d.bills || []);
+      setPagination(d.pagination || {});
+      setLoading(false);
+    });
+  }, [filters]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div>
+      <h1 style={{fontSize:'1.5rem', fontWeight:800, color:'#fff', marginBottom:'1.5rem'}}>\ud83d\udcdc Legislation Tracker</h1>
+
+      <div className="filters">
+        <input
+          className="waitlist-input"
+          style={{maxWidth:250}}
+          placeholder="Search bills..."
+          value={filters.search}
+          onChange={e => setFilters(f => ({ ...f, search: e.target.value, page: 1 }))}
+        />
+        <select className="filter-select" value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value, page: 1 }))}>
+          <option value="all">All Statuses</option>
+          <option value="introduced">Introduced</option>
+          <option value="committee">In Committee</option>
+          <option value="passed_house">Passed House</option>
+          <option value="passed_senate">Passed Senate</option>
+          <option value="passed_both">Passed Both</option>
+          <option value="signed">Signed</option>
+          <option value="vetoed">Vetoed</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="loading"><div className="spinner"></div></div>
+      ) : bills.length === 0 ? (
+        <div className="card" style={{textAlign:'center', padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)'}}>No bills found. {pagination.total === 0 ? 'Run data ingestion to load bills.' : 'Try adjusting your filters.'}</p>
+        </div>
+      ) : (
+        <div className="card" style={{padding:0}}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Bill</th>
+                  <th>Title</th>
+                  <th>Sponsor</th>
+                  <th>Status</th>
+                  <th>Last Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bills.map(bill => (
+                  <tr key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })}>
+                    <td><span className="bill-number">{bill.bill_number}</span></td>
+                    <td style={{maxWidth:300}}>
+                      <div style={{fontWeight:500, color:'#fff', fontSize:'0.85rem'}}>{bill.short_title || bill.title}</div>
+                    </td>
+                    <td>
+                      {bill.sponsor ? (
+                        <div style={{display:'flex',alignItems:'center',gap:'0.4rem'}}>
+                          <PartyBadge party={bill.sponsor.party} />
+                          <span style={{fontSize:'0.85rem'}}>{bill.sponsor.full_name}</span>
+                        </div>
+                      ) : <span style={{color:'var(--text-dim)'}}>—</span>}
+                    </td>
+                    <td><StatusBadge status={bill.status} /></td>
+                    <td style={{fontSize:'0.8rem', color:'var(--text-dim)'}}>{bill.last_action_date || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {pagination.pages > 1 && (
+        <div className="pagination">
+          <button className="page-btn" disabled={filters.page <= 1} onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}>Prev</button>
+          <span style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Page {pagination.page} of {pagination.pages}</span>
+          <button className="page-btn" disabled={filters.page >= pagination.pages} onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}>Next</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= BILL DETAIL =======
+function BillDetail({ id, setView }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'bill', id }).then(d => { setData(d); setLoading(false); });
+  }, [id]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+  if (!data || !data.bill) return <div className="card"><p>Bill not found.</p></div>;
+
+  const { bill, actions = [], cosponsors = [], votes = [], spectrum } = data;
+
+  return (
+    <div>
+      <button className="back-btn" onClick={() => setView({ page: 'bills' })}>\u2190 Back to Bills</button>
+
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:'1rem', justifyContent:'space-between', flexWrap:'wrap'}}>
+          <div>
+            <div style={{display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.5rem'}}>
+              <span className="bill-number" style={{fontSize:'1.1rem'}}>{bill.bill_number}</span>
+              <StatusBadge status={bill.status} />
+            </div>
+            <h1 style={{fontSize:'1.4rem', fontWeight:800, color:'#fff', marginBottom:'0.5rem'}}>{bill.title}</h1>
+            {bill.short_title && bill.short_title !== bill.title && (
+              <p style={{color:'var(--text-dim)', fontStyle:'italic', marginBottom:'0.5rem'}}>{bill.short_title}</p>
+            )}
+          </div>
+          {spectrum && (
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:'0.7rem', color:'var(--text-dim)', textTransform:'uppercase', letterSpacing:'0.05em'}}>Constitutional Alignment</div>
+              <div style={{fontSize:'1.8rem', fontWeight:800, color: spectrum.position > 0 ? 'var(--green)' : spectrum.position < 0 ? 'var(--red)' : 'var(--text-dim)'}}>{spectrum.position > 0 ? '+' : ''}{spectrum.position}</div>
+            </div>
+          )}
+        </div>
+
+        {bill.sponsor && (
+          <div style={{marginTop:'1rem', display:'flex', alignItems:'center', gap:'0.5rem'}}>
+            <span style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Sponsor:</span>
+            <PartyBadge party={bill.sponsor.party} />
+            <a style={{cursor:'pointer'}} onClick={() => setView({ page: 'legislator', id: bill.sponsor.id })}>{bill.sponsor.full_name}</a>
+            <span style={{color:'var(--text-dim)', fontSize:'0.8rem'}}>({bill.sponsor.state_code})</span>
+            {bill.sponsor.cfs_score && <CfsBadge score={bill.sponsor.cfs_score} small />}
+          </div>
+        )}
+
+        {bill.summary_text && (
+          <div style={{marginTop:'1rem', padding:'1rem', background:'var(--navy)', borderRadius:8, fontSize:'0.9rem', color:'var(--text-dim)'}}>
+            {bill.summary_text}
+          </div>
+        )}
+
+        <div style={{marginTop:'1rem', display:'flex', gap:'1rem', flexWrap:'wrap', fontSize:'0.8rem', color:'var(--text-dim)'}}>
+          <span>Introduced: {bill.introduced_date || '—'}</span>
+          <span>Last Action: {bill.last_action_date || '—'}</span>
+          {bill.congress_gov_id && <a href={`https://www.congress.gov/bill/119th-congress/${bill.bill_type === 'hr' ? 'house-bill' : 'senate-bill'}/${bill.bill_number.replace(/\D/g,'')}`} target="_blank" rel="noopener">Congress.gov \u2197</a>}
+        </div>
+      </div>
+
+      <div className="detail-grid">
+        <div className="card">
+          <div className="card-header"><span className="card-title">Actions Timeline</span></div>
+          {actions.length === 0 ? <p style={{color:'var(--text-dim)'}}>No actions recorded.</p> : (
+            <div style={{maxHeight:300, overflowY:'auto'}}>
+              {actions.map((a, i) => (
+                <div key={i} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)', fontSize:'0.85rem'}}>
+                  <div style={{color:'var(--blue)', fontWeight:600, fontSize:'0.75rem'}}>{a.action_date} {a.chamber && `\u00b7 ${a.chamber}`}</div>
+                  <div style={{color:'var(--text)'}}>{a.description}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="card" style={{marginBottom:'1.5rem'}}>
+            <div className="card-header"><span className="card-title">Cosponsors ({cosponsors.length})</span></div>
+            {cosponsors.length === 0 ? <p style={{color:'var(--text-dim)'}}>No cosponsors.</p> : (
+              <div style={{maxHeight:200, overflowY:'auto'}}>
+                {cosponsors.map((c, i) => c && (
+                  <div key={i} className="clickable" onClick={() => setView({ page: 'legislator', id: c.id })} style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.3rem 0',borderBottom:'1px solid var(--border)'}}>
+                    <PartyBadge party={c.party} />
+                    <span style={{fontSize:'0.85rem'}}>{c.full_name}</span>
+                    <span style={{fontSize:'0.75rem',color:'var(--text-dim)',marginLeft:'auto'}}>{c.state_code}</span>
+                    {c.cfs_score && <CfsBadge score={c.cfs_score} small />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header"><span className="card-title">Roll Call Votes</span></div>
+            {votes.length === 0 ? <p style={{color:'var(--text-dim)'}}>No roll call votes recorded.</p> : (
+              votes.map((v, i) => (
+                <div key={i} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)', fontSize:'0.85rem'}}>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span style={{fontWeight:600, color:'#fff'}}>{v.chamber} Vote #{v.vote_number}</span>
+                    <span style={{color:'var(--text-dim)', fontSize:'0.75rem'}}>{v.vote_date}</span>
+                  </div>
+                  <div style={{color:'var(--text-dim)'}}>{v.question}</div>
+                  <div style={{marginTop:'0.25rem'}}>
+                    Result: <strong style={{color: v.result?.toLowerCase().includes('pass') ? 'var(--green)' : 'var(--red)'}}>{v.result}</strong>
+                    <span style={{marginLeft:'0.75rem',fontSize:'0.8rem'}}>Yea: {v.yea_count} | Nay: {v.nay_count} | NV: {v.not_voting_count}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ======= LEGISLATORS LIST =======
+function LegislatorsList({ setView }) {
+  const [legislators, setLegislators] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ page: 1, chamber: '', party: '', state: '', search: '' });
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = { route: 'legislators', page: filters.page, limit: 50 };
+    if (filters.chamber) params.chamber = filters.chamber;
+    if (filters.party) params.party = filters.party;
+    if (filters.state) params.state = filters.state;
+    if (filters.search) params.search = filters.search;
+    api(params).then(d => {
+      setLegislators(d.legislators || []);
+      setPagination(d.pagination || {});
+      setLoading(false);
+    });
+  }, [filters]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const states = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','AS','DC','GU','MP','PR','VI'];
+
+  return (
+    <div>
+      <h1 style={{fontSize:'1.5rem', fontWeight:800, color:'#fff', marginBottom:'1.5rem'}}>\ud83c\udfd4 Representatives</h1>
+
+      <div className="filters">
+        <input className="waitlist-input" style={{maxWidth:200}} placeholder="Search name..." value={filters.search} onChange={e => setFilters(f => ({...f, search: e.target.value, page: 1}))} />
+        <select className="filter-select" value={filters.chamber} onChange={e => setFilters(f => ({...f, chamber: e.target.value, page: 1}))}>
+          <option value="">All Chambers</option>
+          <option value="house">House</option>
+          <option value="senate">Senate</option>
+        </select>
+        <select className="filter-select" value={filters.party} onChange={e => setFilters(f => ({...f, party: e.target.value, page: 1}))}>
+          <option value="">All Parties</option>
+          <option value="R">Republican</option>
+          <option value="D">Democrat</option>
+          <option value="I">Independent</option>
+        </select>
+        <select className="filter-select" value={filters.state} onChange={e => setFilters(f => ({...f, state: e.target.value, page: 1}))}>
+          <option value="">All States</option>
+          {states.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="loading"><div className="spinner"></div></div>
+      ) : legislators.length === 0 ? (
+        <div className="card" style={{textAlign:'center', padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)'}}>No representatives found. {pagination.total === 0 ? 'Run data ingestion to load legislators.' : 'Try adjusting your filters.'}</p>
+        </div>
+      ) : (
+        <div className="card" style={{padding:0}}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>CFS</th>
+                  <th>Name</th>
+                  <th>Party</th>
+                  <th>State</th>
+                  <th>Chamber</th>
+                  <th>District</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                {legislators.map(leg => (
+                  <tr key={leg.id} className="clickable" onClick={() => setView({ page: 'legislator', id: leg.id })}>
+                    <td><CfsBadge score={leg.cfs_score} small /></td>
+                    <td style={{fontWeight:600, color:'#fff'}}>{leg.full_name}</td>
+                    <td><PartyBadge party={leg.party} /></td>
+                    <td>{leg.state_code}</td>
+                    <td style={{textTransform:'capitalize'}}>{leg.chamber}</td>
+                    <td>{leg.district || '—'}</td>
+                    <td><span className={`trend ${leg.cfs_trend || ''}`}>{trendIcon(leg.cfs_trend)} {leg.cfs_trend || '—'}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {pagination.pages > 1 && (
+        <div className="pagination">
+          <button className="page-btn" disabled={filters.page <= 1} onClick={() => setFilters(f => ({...f, page: f.page - 1}))}>Prev</button>
+          <span style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Page {pagination.page} of {pagination.pages}</span>
+          <button className="page-btn" disabled={filters.page >= pagination.pages} onClick={() => setFilters(f => ({...f, page: f.page + 1}))}>Next</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= LEGISLATOR DETAIL =======
+function LegislatorDetail({ id, setView }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'legislator', id }).then(d => { setData(d); setLoading(false); });
+  }, [id]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+  if (!data || !data.legislator) return <div className="card"><p>Representative not found.</p></div>;
+
+  const { legislator: leg, cfs_history = [], sponsored_bills = [], recent_votes = [], voting_stats = {} } = data;
+  const cfsNotes = cfs_history[0]?.notes ? JSON.parse(cfs_history[0].notes) : null;
+
+  return (
+    <div>
+      <button className="back-btn" onClick={() => setView({ page: 'legislators' })}>\u2190 Back to Representatives</button>
+
+      <div className="detail-header">
+        {leg.photo_url ? (
+          <img className="detail-photo" src={leg.photo_url} alt={leg.full_name} />
+        ) : (
+          <div className="detail-photo" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'2.5rem'}}>\ud83c\udfd4</div>
+        )}
+        <div className="detail-info" style={{flex:1}}>
+          <h1>{leg.full_name}</h1>
+          <div className="detail-meta">
+            <span><PartyBadge party={leg.party} /> {leg.party === 'R' ? 'Republican' : leg.party === 'D' ? 'Democrat' : leg.party === 'I' ? 'Independent' : leg.party}</span>
+            <span>{leg.state_code}{leg.district ? `-${leg.district}` : ''}</span>
+            <span style={{textTransform:'capitalize'}}>{leg.chamber}</span>
+            {leg.title && <span>{leg.title}</span>}
+          </div>
+          <div style={{display:'flex', gap:'0.75rem', marginTop:'0.75rem', flexWrap:'wrap', fontSize:'0.85rem'}}>
+            {leg.website_url && <a href={leg.website_url} target="_blank" rel="noopener">Website \u2197</a>}
+            {leg.phone && <span>\ud83d\udcde {leg.phone}</span>}
+            {leg.twitter_handle && <a href={`https://x.com/${leg.twitter_handle}`} target="_blank" rel="noopener">@{leg.twitter_handle}</a>}
+          </div>
+        </div>
+        <div style={{textAlign:'center'}}>
+          <CfsBadge score={leg.cfs_score} />
+          <div style={{marginTop:'0.5rem'}}>
+            <span className={`trend ${leg.cfs_trend || ''}`}>{trendIcon(leg.cfs_trend)} {leg.cfs_trend || 'pending'}</span>
+          </div>
+          <div style={{fontSize:'0.7rem', color:'var(--text-dim)', marginTop:'0.25rem'}}>CFS Score</div>
+        </div>
+      </div>
+
+      {/* CFS Breakdown */}
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Constitutional Fidelity Score</span></div>
+        {leg.cfs_score !== null ? (
+          <div>
+            <div className="cfs-meter">
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'0.25rem'}}>
+                <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>0</span>
+                <span style={{fontSize:'1.2rem',fontWeight:800,color:'#fff'}}>{Math.round(leg.cfs_score)}/100</span>
+                <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>100</span>
+              </div>
+              <div className="cfs-bar-bg">
+                <div className={`cfs-bar-fill ${cfsLevel(leg.cfs_score)}`} style={{width: `${leg.cfs_score}%`}}></div>
+              </div>
+            </div>
+            {cfsNotes && cfsNotes.components && (
+              <div className="cfs-components">
+                <div className="cfs-component">
+                  <div className="cfs-component-value">{cfsNotes.components.participation}</div>
+                  <div className="cfs-component-label">Participation</div>
+                </div>
+                <div className="cfs-component">
+                  <div className="cfs-component-value">{cfsNotes.components.alignment}</div>
+                  <div className="cfs-component-label">Constitutional</div>
+                </div>
+                <div className="cfs-component">
+                  <div className="cfs-component-value">{cfsNotes.components.transparency}</div>
+                  <div className="cfs-component-label">Transparency</div>
+                </div>
+                <div className="cfs-component">
+                  <div className="cfs-component-value">{cfsNotes.components.bipartisan}</div>
+                  <div className="cfs-component-label">Independence</div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p style={{color:'var(--text-dim)'}}>CFS score has not been calculated yet. Run the CFS calculation after data ingestion.</p>
+        )}
+      </div>
+
+      <div className="detail-grid">
+        {/* Voting Stats */}
+        <div className="card">
+          <div className="card-header"><span className="card-title">Voting Record</span></div>
+          {voting_stats.total > 0 ? (
+            <div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'0.75rem'}}>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--green)'}}>{voting_stats.yea}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Yea</div>
+                </div>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--red)'}}>{voting_stats.nay}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Nay</div>
+                </div>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--amber)'}}>{voting_stats.present}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Present</div>
+                </div>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--text-dim)'}}>{voting_stats.not_voting}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Not Voting</div>
+                </div>
+              </div>
+              <div style={{textAlign:'center',marginTop:'0.75rem',fontSize:'0.85rem',color:'var(--text-dim)'}}>
+                Total: {voting_stats.total} votes | Participation: {Math.round(((voting_stats.total - voting_stats.not_voting) / voting_stats.total) * 100)}%
+              </div>
+            </div>
+          ) : (
+            <p style={{color:'var(--text-dim)'}}>No voting records available.</p>
+          )}
+        </div>
+
+        {/* Sponsored Bills */}
+        <div className="card">
+          <div className="card-header"><span className="card-title">Sponsored Bills ({sponsored_bills.length})</span></div>
+          {sponsored_bills.length === 0 ? (
+            <p style={{color:'var(--text-dim)'}}>No sponsored bills found.</p>
+          ) : (
+            <div style={{maxHeight:250, overflowY:'auto'}}>
+              {sponsored_bills.map(bill => (
+                <div key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                    <span className="bill-number">{bill.bill_number}</span>
+                    <StatusBadge status={bill.status} />
+                  </div>
+                  <div style={{fontSize:'0.8rem', color:'var(--text-dim)', marginTop:'0.1rem'}}>{bill.short_title || bill.title}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Votes */}
+      <div className="card" style={{marginTop:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Recent Votes</span></div>
+        {recent_votes.length === 0 ? (
+          <p style={{color:'var(--text-dim)'}}>No recent votes recorded.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Vote</th><th>Question</th><th>Bill</th><th>Position</th><th>Result</th></tr></thead>
+              <tbody>
+                {recent_votes.map((vr, i) => {
+                  const v = vr.vote || {};
+                  const bill = v.bill;
+                  return (
+                    <tr key={i}>
+                      <td style={{fontSize:'0.8rem',whiteSpace:'nowrap'}}>{v.vote_date}<br/><span style={{color:'var(--text-dim)'}}>#{v.vote_number}</span></td>
+                      <td style={{fontSize:'0.85rem'}}>{v.question}</td>
+                      <td>{bill ? <span className="clickable bill-number" onClick={(e) => { e.stopPropagation(); setView({ page: 'bill', id: bill.id }); }}>{bill.bill_number}</span> : '—'}</td>
+                      <td><VotePosition position={vr.position} /></td>
+                      <td style={{fontSize:'0.85rem'}}>{v.result}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ======= SEARCH RESULTS =======
+function SearchResults({ query, setView }) {
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'search', q: query }).then(d => { setResults(d); setLoading(false); });
+  }, [query]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+
+  const { legislators = [], bills = [] } = results || {};
+
+  return (
+    <div>
+      <button className="back-btn" onClick={() => setView({ page: 'dashboard' })}>\u2190 Back</button>
+      <h1 style={{fontSize:'1.3rem',fontWeight:700,color:'#fff',marginBottom:'1.5rem'}}>Search: "{query}"</h1>
+
+      {legislators.length > 0 && (
+        <div className="card" style={{marginBottom:'1.5rem'}}>
+          <div className="card-header"><span className="card-title">Representatives ({legislators.length})</span></div>
+          {legislators.map(leg => (
+            <div key={leg.id} className="clickable" onClick={() => setView({ page: 'legislator', id: leg.id })} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0',borderBottom:'1px solid var(--border)'}}>
+              <CfsBadge score={leg.cfs_score} small />
+              <PartyBadge party={leg.party} />
+              <span style={{fontWeight:500,color:'#fff'}}>{leg.full_name}</span>
+              <span style={{color:'var(--text-dim)',fontSize:'0.8rem',marginLeft:'auto'}}>{leg.state_code} \u00b7 {leg.chamber}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {bills.length > 0 && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">Bills ({bills.length})</span></div>
+          {bills.map(bill => (
+            <div key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })} style={{padding:'0.5rem 0',borderBottom:'1px solid var(--border)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                <span className="bill-number">{bill.bill_number}</span>
+                <StatusBadge status={bill.status} />
+              </div>
+              <div style={{fontSize:'0.85rem',color:'var(--text-dim)',marginTop:'0.2rem'}}>{bill.short_title || bill.title}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {legislators.length === 0 && bills.length === 0 && (
+        <div className="card" style={{textAlign:'center',padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)'}}>No results found for "{query}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= APP =======
+function App() {
+  const [view, setView] = useState({ page: 'dashboard' });
+
+  const handleSearch = (query) => setView({ page: 'search', query });
+
+  let content;
+  switch (view.page) {
+    case 'dashboard': content = <Dashboard setView={setView} />; break;
+    case 'bills': content = <BillsList setView={setView} />; break;
+    case 'bill': content = <BillDetail id={view.id} setView={setView} />; break;
+    case 'legislators': content = <LegislatorsList setView={setView} />; break;
+    case 'legislator': content = <LegislatorDetail id={view.id} setView={setView} />; break;
+    case 'search': content = <SearchResults query={view.query} setView={setView} />; break;
+    default: content = <Dashboard setView={setView} />;
+  }
+
+  return (
+    <div className="app">
+      <Header view={view} setView={setView} onSearch={handleSearch} />
+      <main className="main">{content}</main>
+      <footer className="footer">
+        <p>\u00a9 2025 GlassPalace. Civic Intelligence Platform.</p>
+        <p style={{marginTop:'0.25rem'}}>Defending the Constitution through transparency and accountability.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
