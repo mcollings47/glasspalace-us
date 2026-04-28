@@ -532,6 +532,146 @@
     justify-content: center; padding: 3rem; color: var(--text-dim);
   }
 
+  /* Control Grid Scorecard */
+  .cg-scorecard { margin-top: 1rem; }
+  .cg-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .cg-header h2 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+  .cg-net-score {
+    display: flex; align-items: center; gap: 0.75rem;
+    background: var(--navy-light); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.5rem;
+  }
+  .cg-net-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .cg-net-value { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+  .cg-net-value.positive { color: #f87171; }
+  .cg-net-value.negative { color: #34d399; }
+  .cg-net-value.neutral { color: var(--text-dim); }
+  .cg-columns {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+  }
+  @media (max-width: 768px) {
+    .cg-columns { grid-template-columns: 1fr; }
+  }
+  .cg-column { }
+  .cg-column-title {
+    font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0.75rem 1rem;
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .cg-column-title.for-col { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-bottom: none; }
+  .cg-column-title.against-col { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2); border-bottom: none; }
+  .cg-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; border: 1px solid var(--border);
+    border-top: none; background: var(--card); cursor: pointer;
+    transition: background 0.2s; gap: 0.75rem;
+  }
+  .cg-item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+  .cg-item:hover { background: var(--navy-mid); }
+  .cg-item-title { font-size: 0.88rem; font-weight: 500; color: var(--text); flex: 1; }
+  .cg-item-score {
+    font-size: 1rem; font-weight: 800; min-width: 40px; text-align: right;
+    white-space: nowrap;
+  }
+  .cg-item-score.for-score { color: #f87171; }
+  .cg-item-score.against-score { color: #34d399; }
+  .cg-item-detail {
+    padding: 0.75rem 1rem; background: var(--navy); border: 1px solid var(--border);
+    border-top: none; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5;
+  }
+  .cg-item-meta {
+    display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem;
+    font-size: 0.72rem;
+  }
+  .cg-item-tag {
+    display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+    font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .cg-item-tag.bill { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .cg-item-tag.news { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .cg-item-tag.policy { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .cg-item-tag.executive_order { background: rgba(236,72,153,0.15); color: #f472b6; }
+  .cg-item-tag.international { background: rgba(6,182,212,0.15); color: #22d3ee; }
+  .cg-category-breakdown {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem; margin-top: 1.5rem;
+  }
+  .cg-cat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem; text-align: center;
+  }
+  .cg-cat-name {
+    font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.3rem;
+  }
+  .cg-cat-score { font-size: 1.1rem; font-weight: 800; }
+  .cg-scale-legend {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.5rem; padding: 0.75rem 1rem;
+    background: var(--navy-light); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 0.72rem; color: var(--text-dim);
+  }
+
+  /* Control Grid Actors */
+  .cg-actors-section { margin-top: 2.5rem; }
+  .cg-actors-header {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;
+    padding: 0.75rem 1rem; border-radius: var(--radius); font-weight: 800; font-size: 1.15rem;
+  }
+  .cg-actors-header.proponent { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .cg-actors-header.opponent { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+  .cg-actor-type-group { margin-bottom: 1.5rem; }
+  .cg-actor-type-label {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-dim); margin-bottom: 0.5rem; padding-left: 0.25rem;
+  }
+  .cg-actor-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+  .cg-actor-card {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.85rem 1rem; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  }
+  .cg-actor-card:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); }
+  .cg-actor-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .cg-actor-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
+  .cg-actor-name a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.3); }
+  .cg-actor-name a:hover { text-decoration-color: #fff; }
+  .cg-actor-influence {
+    font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; white-space: nowrap;
+  }
+  .cg-actor-influence.high { background: rgba(239,68,68,0.15); color: #f87171; }
+  .cg-actor-influence.med { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .cg-actor-influence.low { background: rgba(107,114,128,0.15); color: #9ca3af; }
+  .cg-actor-meta {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; font-size: 0.72rem; color: var(--text-dim);
+  }
+  .cg-actor-meta span { background: var(--navy-light); padding: 0.1rem 0.4rem; border-radius: 3px; }
+  .cg-actor-summary { font-size: 0.82rem; color: var(--text); margin-top: 0.5rem; line-height: 1.4; }
+  .cg-actor-analysis { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.4rem; font-style: italic; }
+
+  /* State Breakdown */
+  .cg-state-section { margin-top: 2.5rem; }
+  .cg-state-header {
+    font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .cg-state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+  .cg-state-card {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.6rem 0.75rem; text-align: center;
+  }
+  .cg-state-name { font-size: 0.85rem; font-weight: 700; color: #fff; }
+  .cg-state-counts { display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.3rem; font-size: 0.72rem; }
+  .cg-state-pro { color: #f87171; }
+  .cg-state-opp { color: #34d399; }
+  .cg-state-card.pro-dominant { border-color: rgba(239,68,68,0.3); }
+  .cg-state-card.opp-dominant { border-color: rgba(16,185,129,0.3); }
+  .cg-state-card.mixed { border-color: rgba(245,158,11,0.3); }
+
   /* Notification Bell */
   .notif-bell {
     position: relative; background: none; border: none; color: var(--text-dim);
@@ -930,6 +1070,7 @@ function Header({ view, setView, onSearch, user, onAuthClick, onSignOut }) {
           <button className={`nav-btn ${view.page === 'legislators' ? 'active' : ''}`} onClick={() => setView({ page: 'legislators' })}>Representatives</button>
           <button className={`nav-btn ${view.page === 'spectrum' ? 'active' : ''}`} onClick={() => setView({ page: 'spectrum' })}>Constitution</button>
           <button className={`nav-btn ${view.page === 'scanner' ? 'active' : ''}`} onClick={() => setView({ page: 'scanner' })} style={view.page === 'scanner' ? {} : {color:'#f87171'}}>PsyOp Scanner</button>
+          <button className={`nav-btn ${view.page === 'control-grid' ? 'active' : ''}`} onClick={() => setView({ page: 'control-grid' })} style={view.page === 'control-grid' ? {} : {color:'#fbbf24'}}>Control Grid</button>
         </nav>
         <div className="search-bar">
           <span>\ud83d\udd0d</span>
@@ -2666,6 +2807,414 @@ function PsyOpFeed() {
   );
 }
 
+// ======= CONTROL GRID EVIDENCE SCORECARD =======
+function ControlGridPage({ setView }) {
+  const [evidence, setEvidence] = useState([]);
+  const [actors, setActors] = useState([]);
+  const [stateBreakdown, setStateBreakdown] = useState({});
+  const [summary, setSummary] = useState(null);
+  const [categories, setCategories] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [lastGenerated, setLastGenerated] = useState(null);
+  const [expandedItem, setExpandedItem] = useState(null);
+  const [expandedActor, setExpandedActor] = useState(null);
+  const [actorsView, setActorsView] = useState('proponents');
+
+  const loadEvidence = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}?route=control-grid`, {
+        headers: { 'apikey': ANON_KEY }
+      });
+      const data = await res.json();
+      if (!data.error) {
+        setEvidence(data.evidence || []);
+        setActors(data.actors || []);
+        setStateBreakdown(data.state_breakdown || {});
+        setSummary(data.summary || null);
+        setCategories(data.categories || {});
+        setLastGenerated(data.last_generated);
+      }
+    } catch (e) {
+      console.error('Control grid load error:', e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadEvidence(); }, []);
+
+  const timeAgo = (d) => {
+    if (!d) return '';
+    const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+  };
+
+  const categoryLabel = (cat) => ({
+    surveillance: 'Surveillance', biometrics: 'Biometrics', digital_id: 'Digital ID',
+    cbdc: 'CBDC / Digital Currency', social_credit: 'Social Credit', censorship: 'Censorship',
+    ai_control: 'AI Control', data_collection: 'Data Collection',
+    travel_restriction: 'Travel Restriction', financial_control: 'Financial Control', other: 'Other',
+  })[cat] || cat;
+
+  const forItems = evidence.filter(e => e.evidence_type === 'for').sort((a, b) => b.score - a.score);
+  const againstItems = evidence.filter(e => e.evidence_type === 'against').sort((a, b) => a.score - b.score);
+
+  if (loading) {
+    return (
+      <div>
+        <div className="cg-header">
+          <h2>Digital Control Grid Evidence Scorecard</h2>
+        </div>
+        <div className="loading"><div className="spinner"></div><br/>Loading evidence data...</div>
+      </div>
+    );
+  }
+
+  const netScore = summary ? summary.net_score : 0;
+  const netSign = netScore > 0 ? '+' : '';
+
+  return (
+    <div className="cg-scorecard">
+      <div className="cg-header">
+        <div>
+          <h2 style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+            Digital Control Grid Evidence Scorecard
+          </h2>
+          <p style={{color:'var(--text-dim)',fontSize:'0.85rem',marginTop:'0.25rem',maxWidth:600}}>
+            AI-powered tracking of digital surveillance, biometric mandates, CBDCs, and other control infrastructure — plus evidence of pushback and policy reversals.
+          </p>
+          {lastGenerated && (
+            <p style={{color:'var(--text-dim)',fontSize:'0.75rem',marginTop:'0.25rem'}}>
+              Last updated: {timeAgo(lastGenerated)}
+            </p>
+          )}
+        </div>
+        {summary && (
+          <div className="cg-net-score">
+            <div>
+              <div className="cg-net-label">Net Score</div>
+              <div className={`cg-net-value ${netScore > 0 ? 'positive' : netScore < 0 ? 'negative' : 'neutral'}`}>
+                {netSign}{netScore}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {evidence.length === 0 ? (
+        <div className="card" style={{textAlign:'center',padding:'2.5rem'}}>
+          <p style={{fontSize:'1.1rem',color:'#fff',marginBottom:'0.5rem'}}>No Evidence Data Yet</p>
+          <p style={{color:'var(--text-dim)',fontSize:'0.9rem'}}>
+            Run "Scan Control Grid" from the admin panel. The scanner analyzes bills in the database, news feeds, and social media for evidence of digital control grid implementation and policy reversals.
+          </p>
+        </div>
+      ) : (
+        <div>
+          {/* Summary stats */}
+          {summary && (
+            <div className="feed-stats" style={{marginBottom:'1.5rem'}}>
+              <div className="feed-stat"><span className="feed-stat-value">{summary.total}</span> Evidence Items</div>
+              <div className="feed-stat" style={{color:'#f87171'}}>
+                <span className="feed-stat-value" style={{color:'#f87171'}}>{summary.for_count}</span> For Grid ({'+' + summary.for_score})
+              </div>
+              <div className="feed-stat" style={{color:'#34d399'}}>
+                <span className="feed-stat-value" style={{color:'#34d399'}}>{summary.against_count}</span> Against ({summary.against_score})
+              </div>
+            </div>
+          )}
+
+          {/* Two-column scorecard */}
+          <div className="cg-columns">
+            {/* FOR column */}
+            <div className="cg-column">
+              <div className="cg-column-title for-col">
+                <span style={{fontSize:'1.1rem'}}>&#9650;</span>
+                Evidence FOR the Control Grid
+              </div>
+              {forItems.map((item, i) => (
+                <React.Fragment key={item.id || 'f'+i}>
+                  <div className="cg-item" onClick={() => setExpandedItem(expandedItem === 'f'+i ? null : 'f'+i)}>
+                    <div style={{display:'flex',alignItems:'center',gap:'0.5rem',flex:1,minWidth:0}}>
+                      <span className={`cg-item-tag ${item.source_type}`}>{item.source_type === 'executive_order' ? 'EO' : item.source_type}</span>
+                      <span className="cg-item-title">{item.title}</span>
+                    </div>
+                    <span className="cg-item-score for-score">+{Math.abs(item.score)}</span>
+                  </div>
+                  {expandedItem === 'f'+i && (
+                    <div className="cg-item-detail">
+                      <div>{item.summary}</div>
+                      <div className="cg-item-meta">
+                        {item.source_name && <span>Source: {item.source_name}</span>}
+                        {item.country && item.country !== 'US' && <span>Country: {item.country}</span>}
+                        <span>Category: {categoryLabel(item.category)}</span>
+                        {item.confidence && <span>Confidence: {Math.round(item.confidence * 100)}%</span>}
+                      </div>
+                      {item.ai_analysis && (
+                        <div style={{marginTop:'0.5rem',fontStyle:'italic',color:'var(--text-dim)'}}>{item.ai_analysis}</div>
+                      )}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+              {forItems.length === 0 && (
+                <div className="cg-item"><span className="cg-item-title" style={{color:'var(--text-dim)'}}>No evidence items</span></div>
+              )}
+            </div>
+
+            {/* AGAINST column */}
+            <div className="cg-column">
+              <div className="cg-column-title against-col">
+                <span style={{fontSize:'1.1rem'}}>&#9660;</span>
+                Evidence AGAINST the Control Grid (Policy Reversals)
+              </div>
+              {againstItems.map((item, i) => (
+                <React.Fragment key={item.id || 'a'+i}>
+                  <div className="cg-item" onClick={() => setExpandedItem(expandedItem === 'a'+i ? null : 'a'+i)}>
+                    <div style={{display:'flex',alignItems:'center',gap:'0.5rem',flex:1,minWidth:0}}>
+                      <span className={`cg-item-tag ${item.source_type}`}>{item.source_type === 'executive_order' ? 'EO' : item.source_type}</span>
+                      <span className="cg-item-title">{item.title}</span>
+                    </div>
+                    <span className="cg-item-score against-score">{item.score}</span>
+                  </div>
+                  {expandedItem === 'a'+i && (
+                    <div className="cg-item-detail">
+                      <div>{item.summary}</div>
+                      <div className="cg-item-meta">
+                        {item.source_name && <span>Source: {item.source_name}</span>}
+                        {item.country && item.country !== 'US' && <span>Country: {item.country}</span>}
+                        <span>Category: {categoryLabel(item.category)}</span>
+                        {item.confidence && <span>Confidence: {Math.round(item.confidence * 100)}%</span>}
+                      </div>
+                      {item.ai_analysis && (
+                        <div style={{marginTop:'0.5rem',fontStyle:'italic',color:'var(--text-dim)'}}>{item.ai_analysis}</div>
+                      )}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+              {againstItems.length === 0 && (
+                <div className="cg-item"><span className="cg-item-title" style={{color:'var(--text-dim)'}}>No evidence items</span></div>
+              )}
+            </div>
+          </div>
+
+          {/* Category Breakdown */}
+          {Object.keys(categories).length > 0 && (
+            <div>
+              <h3 style={{color:'#fff',fontSize:'1rem',fontWeight:700,marginTop:'2rem',marginBottom:'0.75rem'}}>Category Breakdown</h3>
+              <div className="cg-category-breakdown">
+                {Object.entries(categories).map(([cat, data]) => {
+                  const catNet = data.for_score + data.against_score;
+                  return (
+                    <div className="cg-cat-card" key={cat}>
+                      <div className="cg-cat-name">{categoryLabel(cat)}</div>
+                      <div className={`cg-cat-score ${catNet > 0 ? '' : ''}`} style={{color: catNet > 0 ? '#f87171' : catNet < 0 ? '#34d399' : 'var(--text-dim)'}}>
+                        {catNet > 0 ? '+' : ''}{catNet}
+                      </div>
+                      <div style={{fontSize:'0.65rem',color:'var(--text-dim)',marginTop:'0.2rem'}}>
+                        {data.for_count} for / {data.against_count} against
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Scale Legend */}
+          <div className="cg-scale-legend">
+            <span style={{color:'#34d399',fontWeight:600}}>-10 = Completely Banned / Reversed</span>
+            <span style={{color:'var(--text-dim)'}}>0 = Neutral</span>
+            <span style={{color:'#f87171',fontWeight:600}}>+10 = Imminent / Fully Implemented</span>
+          </div>
+
+          {/* ===== ACTORS SECTION ===== */}
+          {actors.length > 0 && (() => {
+            const proponents = actors.filter(a => a.role === 'proponent');
+            const opponents = actors.filter(a => a.role === 'opponent');
+
+            const actorTypeLabel = (t) => ({
+              politician: 'Politicians & Legislators',
+              corporation: 'Corporations & Tech Companies',
+              organization: 'Organizations & Think Tanks',
+              government_agency: 'Government Agencies',
+              state_government: 'State Governments',
+              international_body: 'International Bodies',
+              think_tank: 'Think Tanks & Advocacy',
+            })[t] || t;
+
+            const actorTypeOrder = ['politician','corporation','organization','government_agency','state_government','international_body','think_tank'];
+
+            const groupByType = (list) => {
+              const groups = {};
+              list.forEach(a => {
+                const t = a.actor_type || 'other';
+                if (!groups[t]) groups[t] = [];
+                groups[t].push(a);
+              });
+              return actorTypeOrder.filter(t => groups[t]).map(t => [t, groups[t].sort((a,b) => (b.influence_score||0) - (a.influence_score||0))]);
+            };
+
+            const influenceTag = (score) => {
+              if (score >= 8) return { label: 'High Influence', cls: 'high' };
+              if (score >= 5) return { label: 'Med Influence', cls: 'med' };
+              return { label: 'Low Influence', cls: 'low' };
+            };
+
+            const renderActorCard = (actor, idx, prefix) => {
+              const inf = influenceTag(actor.influence_score || 0);
+              const key = prefix + idx;
+              const isExpanded = expandedActor === key;
+              return (
+                <div className="cg-actor-card" key={key} onClick={() => setExpandedActor(isExpanded ? null : key)}>
+                  <div className="cg-actor-card-top">
+                    <div className="cg-actor-name">
+                      {actor.legislator_id ? (
+                        <a href="#" onClick={(e) => { e.stopPropagation(); setView({ page: 'legislator', id: actor.legislator_id }); }}>{actor.name}</a>
+                      ) : actor.name}
+                    </div>
+                    <span className={`cg-actor-influence ${inf.cls}`}>{inf.label}</span>
+                  </div>
+                  <div className="cg-actor-meta">
+                    {actor.party && <span>{actor.party}</span>}
+                    {actor.state_code && <span>{actor.state_code}</span>}
+                    {actor.category && <span>{categoryLabel(actor.category)}</span>}
+                    {actor.involvement_type && <span>{actor.involvement_type}</span>}
+                  </div>
+                  {actor.action_summary && <div className="cg-actor-summary">{actor.action_summary}</div>}
+                  {isExpanded && actor.ai_analysis && (
+                    <div className="cg-actor-analysis">{actor.ai_analysis}</div>
+                  )}
+                </div>
+              );
+            };
+
+            const renderGroup = (list, prefix) => {
+              const grouped = groupByType(list);
+              if (grouped.length === 0) return <div style={{color:'var(--text-dim)',padding:'1rem',fontSize:'0.9rem'}}>No actors identified yet</div>;
+              return grouped.map(([type, items]) => (
+                <div className="cg-actor-type-group" key={type}>
+                  <div className="cg-actor-type-label">{actorTypeLabel(type)} ({items.length})</div>
+                  <div className="cg-actor-cards">
+                    {items.map((a, i) => renderActorCard(a, i, prefix + type))}
+                  </div>
+                </div>
+              ));
+            };
+
+            return (
+              <div className="cg-actors-section">
+                <h3 style={{color:'#fbbf24',fontSize:'1.3rem',fontWeight:800,marginBottom:'0.25rem',display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                  &#128373; Who's Behind It &amp; Who's Fighting It
+                </h3>
+                <p style={{color:'var(--text-dim)',fontSize:'0.82rem',marginBottom:'1.25rem'}}>
+                  AI analysis of bill sponsors, public statements, technology developers, and policy advocates — identifying who is pushing the digital control grid and who is actively resisting it.
+                </p>
+
+                {summary && summary.actor_count > 0 && (
+                  <div className="feed-stats" style={{marginBottom:'1.25rem'}}>
+                    <div className="feed-stat"><span className="feed-stat-value">{summary.actor_count}</span> Actors Identified</div>
+                    <div className="feed-stat" style={{color:'#f87171'}}>
+                      <span className="feed-stat-value" style={{color:'#f87171'}}>{summary.proponent_count || proponents.length}</span> Proponents
+                    </div>
+                    <div className="feed-stat" style={{color:'#34d399'}}>
+                      <span className="feed-stat-value" style={{color:'#34d399'}}>{summary.opponent_count || opponents.length}</span> Opponents
+                    </div>
+                  </div>
+                )}
+
+                {/* Toggle tabs */}
+                <div style={{display:'flex',gap:'0.5rem',marginBottom:'1.25rem'}}>
+                  <button
+                    onClick={() => setActorsView('proponents')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='proponents' ? 'rgba(239,68,68,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='proponents' ? '#f87171' : 'var(--text-dim)',
+                      borderColor: actorsView==='proponents' ? 'rgba(239,68,68,0.3)' : 'var(--border)',
+                    }}
+                  >&#9650; Pushing the Grid ({proponents.length})</button>
+                  <button
+                    onClick={() => setActorsView('opponents')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='opponents' ? 'rgba(16,185,129,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='opponents' ? '#34d399' : 'var(--text-dim)',
+                      borderColor: actorsView==='opponents' ? 'rgba(16,185,129,0.3)' : 'var(--border)',
+                    }}
+                  >&#9660; Fighting the Grid ({opponents.length})</button>
+                  <button
+                    onClick={() => setActorsView('states')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='states' ? 'rgba(245,158,11,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='states' ? '#fbbf24' : 'var(--text-dim)',
+                      borderColor: actorsView==='states' ? 'rgba(245,158,11,0.3)' : 'var(--border)',
+                    }}
+                  >&#127463; State Breakdown</button>
+                </div>
+
+                {actorsView === 'proponents' && (
+                  <div>
+                    <div className="cg-actors-header proponent">&#9650; Pushing the Digital Control Grid</div>
+                    {renderGroup(proponents, 'pro-')}
+                  </div>
+                )}
+
+                {actorsView === 'opponents' && (
+                  <div>
+                    <div className="cg-actors-header opponent">&#9660; Fighting the Digital Control Grid</div>
+                    {renderGroup(opponents, 'opp-')}
+                  </div>
+                )}
+
+                {actorsView === 'states' && (
+                  <div className="cg-state-section">
+                    <div className="cg-state-header">&#127463; State-Level Breakdown</div>
+                    {Object.keys(stateBreakdown).length > 0 ? (
+                      <div className="cg-state-grid">
+                        {Object.entries(stateBreakdown)
+                          .sort((a,b) => (b[1].proponent_count + b[1].opponent_count) - (a[1].proponent_count + a[1].opponent_count))
+                          .map(([state, data]) => {
+                            const cls = data.proponent_count > data.opponent_count ? 'pro-dominant'
+                              : data.opponent_count > data.proponent_count ? 'opp-dominant' : 'mixed';
+                            return (
+                              <div className={`cg-state-card ${cls}`} key={state}>
+                                <div className="cg-state-name">{state}</div>
+                                <div className="cg-state-counts">
+                                  <span className="cg-state-pro">&#9650; {data.proponent_count} pushing</span>
+                                  <span className="cg-state-opp">&#9660; {data.opponent_count} fighting</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div style={{color:'var(--text-dim)',padding:'1rem',fontSize:'0.9rem'}}>No state-level data available yet. Run the scanner to populate.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <div className="scanner-disclaimer" style={{marginTop:'1.5rem'}}>
+            <strong>Disclaimer:</strong> The Digital Control Grid Evidence Scorecard uses AI to analyze legislation, news, and social media for indicators of
+            digital surveillance and control infrastructure. Scores reflect AI assessment of implementation status, not editorial judgment.
+            Evidence items are sourced from real data including bills in the GlassPalace database, RSS news feeds, and social media.
+            This tool is for informational purposes — verify claims independently.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ======= APP =======
 function App() {
   const [view, setView] = useState({ page: 'dashboard' });
@@ -2707,6 +3256,7 @@ function App() {
     case 'spectrum': content = <SpectrumPage setView={setView} />; break;
     case 'notifications': content = <NotificationPrefsPage user={user} />; break;
     case 'scanner': content = <PsyOpScanner user={user} />; break;
+    case 'control-grid': content = <ControlGridPage setView={setView} />; break;
     default: content = <Dashboard setView={setView} />;
   }
 
