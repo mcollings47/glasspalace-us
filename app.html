@@ -1,0 +1,3757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlassPalace — Civic Intelligence Platform</title>
+<meta name="description" content="Track legislation, grade your representatives, and defend the Constitution with GlassPalace.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --navy: #0a0e27;
+    --navy-light: #141832;
+    --navy-mid: #1e2448;
+    --blue: #3b82f6;
+    --blue-dark: #2563eb;
+    --blue-glow: rgba(59, 130, 246, 0.15);
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --gold: #fbbf24;
+    --text: #e0e7ef;
+    --text-dim: #8892a8;
+    --border: #2a2f4e;
+    --card: #141832;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Layout */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .main { flex: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%; }
+
+  /* Header */
+  .header {
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    padding: 0 1.5rem;
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .logo { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+  .logo-icon { font-size: 1.5rem; }
+  .logo-text { font-weight: 800; font-size: 1.2rem; color: #fff; letter-spacing: -0.02em; }
+  .logo-badge { font-size: 0.6rem; background: var(--blue); color: #fff; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .nav { display: flex; gap: 0.25rem; }
+  .nav-btn {
+    padding: 0.5rem 1rem; border: none; background: transparent;
+    color: var(--text-dim); font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; border-radius: 8px; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { color: var(--text); background: var(--navy-light); }
+  .nav-btn.active { color: #fff; background: var(--navy-mid); }
+  .search-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--navy-light); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.4rem 0.8rem; width: 260px;
+  }
+  .search-bar input {
+    background: transparent; border: none; color: var(--text);
+    font-size: 0.85rem; width: 100%; outline: none; font-family: inherit;
+  }
+  .search-bar input::placeholder { color: var(--text-dim); }
+
+  /* Cards */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #3a4068; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { text-align: center; padding: 1.25rem; }
+  .stat-value { font-size: 2rem; font-weight: 800; color: #fff; }
+  .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Citizen Accessibility Score Badge */
+  .cfs-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; border-radius: 50%;
+    font-weight: 800; font-size: 0.95rem; color: #fff;
+    flex-shrink: 0;
+  }
+  .cfs-badge.high { background: linear-gradient(135deg, #10b981, #059669); }
+  .cfs-badge.mid { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .cfs-badge.low { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  .cfs-badge.none { background: var(--navy-mid); color: var(--text-dim); font-size: 0.7rem; }
+  .cfs-badge-sm { width: 36px; height: 36px; font-size: 0.8rem; }
+
+  /* Trend indicators */
+  .trend { font-size: 0.75rem; font-weight: 600; }
+  .trend.rising { color: var(--green); }
+  .trend.falling { color: var(--red); }
+  .trend.stable { color: var(--text-dim); }
+  .trend.new { color: var(--blue); }
+
+  /* Party badges */
+  .party-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .party-R { background: #ef4444; }
+  .party-D { background: #3b82f6; }
+  .party-I { background: #8b5cf6; }
+  .party-L { background: #f59e0b; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .status-introduced { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .status-committee { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .status-passed_house, .status-passed_senate { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .status-passed_both { background: rgba(16,185,129,0.15); color: #34d399; }
+  .status-signed { background: rgba(16,185,129,0.2); color: #10b981; }
+  .status-vetoed { background: rgba(239,68,68,0.15); color: #f87171; }
+  .status-active, .status-enacted { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-weight: 600; }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(42,47,78,0.5); font-size: 0.9rem; }
+  tr:hover td { background: rgba(59, 130, 246, 0.03); }
+  .clickable { cursor: pointer; }
+
+  /* Filters */
+  .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+  .filter-select {
+    background: var(--navy-light); border: 1px solid var(--border);
+    color: var(--text); padding: 0.5rem 0.75rem; border-radius: 8px;
+    font-size: 0.85rem; font-family: inherit; cursor: pointer; outline: none;
+  }
+  .filter-select:focus { border-color: var(--blue); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .page-btn {
+    padding: 0.4rem 0.8rem; border: 1px solid var(--border); background: var(--navy-light);
+    color: var(--text); border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit;
+  }
+  .page-btn:hover { border-color: var(--blue); }
+  .page-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Detail page */
+  .detail-header { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 2rem; }
+  .detail-photo {
+    width: 120px; height: 120px; border-radius: 16px; object-fit: cover;
+    background: var(--navy-mid); border: 2px solid var(--border);
+  }
+  .detail-info h1 { font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 0.25rem; }
+  .detail-meta { display: flex; gap: 1rem; flex-wrap: wrap; color: var(--text-dim); font-size: 0.9rem; }
+  .detail-meta span { display: flex; align-items: center; gap: 0.3rem; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .bill-title { font-weight: 600; color: #fff; }
+  .bill-number { color: var(--blue); font-weight: 600; font-size: 0.85rem; }
+
+  /* CAS Meter */
+  .cfs-meter { margin: 1rem 0; }
+  .cfs-bar-bg { height: 12px; background: var(--navy-mid); border-radius: 6px; overflow: hidden; }
+  .cfs-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; }
+  .cfs-bar-fill.high { background: linear-gradient(90deg, #10b981, #34d399); }
+  .cfs-bar-fill.mid { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .cfs-bar-fill.low { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .cfs-components { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  .cfs-component { text-align: center; padding: 0.75rem; background: var(--navy); border-radius: 8px; }
+  .cfs-component-value { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .cfs-component-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 3rem; color: var(--text-dim); }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Back button */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.8rem; background: var(--navy-light); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    font-family: inherit; margin-bottom: 1.5rem;
+  }
+  .back-btn:hover { color: var(--text); border-color: #3a4068; }
+
+  /* Voting position */
+  .vote-yea { color: var(--green); font-weight: 600; }
+  .vote-nay { color: var(--red); font-weight: 600; }
+  .vote-present { color: var(--amber); }
+  .vote-not_voting { color: var(--text-dim); }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border); padding: 2rem 1.5rem;
+    text-align: center; color: var(--text-dim); font-size: 0.8rem;
+  }
+
+  /* Waitlist section */
+  .waitlist-banner {
+    background: linear-gradient(135deg, var(--navy-light), var(--navy-mid));
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 2rem; text-align: center; margin-bottom: 2rem;
+  }
+  .waitlist-banner h2 { color: #fff; font-size: 1.3rem; margin-bottom: 0.5rem; }
+  .waitlist-banner p { color: var(--text-dim); margin-bottom: 1rem; }
+  .waitlist-form { display: flex; gap: 0.5rem; justify-content: center; max-width: 400px; margin: 0 auto; }
+  .waitlist-input {
+    flex: 1; padding: 0.6rem 1rem; background: var(--navy); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none;
+  }
+  .waitlist-input:focus { border-color: var(--blue); }
+  .waitlist-submit {
+    padding: 0.6rem 1.5rem; background: var(--blue); color: #fff; border: none;
+    border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .waitlist-submit:hover { background: var(--blue-dark); }
+
+  /* Contact Actions */
+  .contact-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+  .contact-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem;
+    font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+    font-family: inherit; transition: all 0.2s;
+  }
+  .contact-btn-call { background: rgba(16,185,129,0.1); color: #10b981; border-color: rgba(16,185,129,0.3); }
+  .contact-btn-call:hover { background: rgba(16,185,129,0.2); }
+  .contact-btn-email { background: rgba(59,130,246,0.1); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+  .contact-btn-email:hover { background: rgba(59,130,246,0.2); }
+  .contact-btn-tweet { background: rgba(139,92,246,0.1); color: #a78bfa; border-color: rgba(139,92,246,0.3); }
+  .contact-btn-tweet:hover { background: rgba(139,92,246,0.2); }
+  .contact-btn-web { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+  .contact-btn-web:hover { background: rgba(245,158,11,0.2); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 1rem;
+  }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 2rem; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
+  }
+  .modal h2 { color: #fff; font-size: 1.2rem; margin-bottom: 1rem; }
+  .modal-close {
+    float: right; background: none; border: none; color: var(--text-dim);
+    font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1;
+  }
+  .modal-close:hover { color: #fff; }
+
+  /* Auth Form */
+  .auth-form { display: flex; flex-direction: column; gap: 0.75rem; }
+  .auth-input {
+    padding: 0.6rem 1rem; background: var(--navy); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none;
+  }
+  .auth-input:focus { border-color: var(--blue); }
+  .auth-btn {
+    padding: 0.7rem 1.5rem; background: var(--blue); color: #fff; border: none;
+    border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem;
+  }
+  .auth-btn:hover { background: var(--blue-dark); }
+  .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-toggle { color: var(--blue); cursor: pointer; text-align: center; font-size: 0.85rem; margin-top: 0.5rem; }
+
+  /* Watchlist Button */
+  .watchlist-btn {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem;
+    cursor: pointer; border: 1px solid var(--border); background: var(--navy-light);
+    color: var(--text-dim); font-family: inherit; transition: all 0.2s;
+  }
+  .watchlist-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .watchlist-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(251,191,36,0.1); }
+
+  /* Subject Tags */
+  .subject-tag {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px;
+    font-size: 0.7rem; background: rgba(59,130,246,0.1); color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.2); margin: 0.1rem;
+  }
+
+  /* Template Card */
+  .template-card {
+    background: var(--navy); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .template-card:hover { border-color: var(--blue); }
+  .template-text {
+    background: var(--navy-mid); padding: 0.75rem; border-radius: 6px;
+    font-size: 0.85rem; color: var(--text); line-height: 1.5; white-space: pre-wrap;
+    margin-top: 0.5rem;
+  }
+
+  /* Onboarding */
+  .interest-chip {
+    display: inline-flex; align-items: center; padding: 0.4rem 0.8rem;
+    border-radius: 20px; font-size: 0.85rem; cursor: pointer;
+    border: 1px solid var(--border); background: var(--navy-light);
+    color: var(--text-dim); transition: all 0.2s; margin: 0.2rem;
+  }
+  .interest-chip.selected { border-color: var(--blue); color: #fff; background: rgba(59,130,246,0.15); }
+
+  /* Community stat */
+  .community-stat {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;
+  }
+
+  /* PsyOp Scanner */
+  .scanner-input-area {
+    width: 100%; min-height: 160px; max-height: 400px; resize: vertical;
+    background: var(--navy); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 1rem; font-size: 0.9rem; font-family: inherit;
+    line-height: 1.6; outline: none;
+  }
+  .scanner-input-area:focus { border-color: var(--blue); }
+  .scanner-input-area::placeholder { color: var(--text-dim); }
+  .scan-btn {
+    padding: 0.7rem 2rem; background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff; border: none; border-radius: 8px; font-weight: 700;
+    font-size: 1rem; cursor: pointer; font-family: inherit; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .scan-btn:hover { background: linear-gradient(135deg, #dc2626, #b91c1c); transform: translateY(-1px); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .indicator-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .indicator-card {
+    background: var(--navy); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.25rem; transition: border-color 0.2s;
+  }
+  .indicator-card:hover { border-color: #3a4068; }
+  .indicator-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+  .indicator-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
+  .indicator-score-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 40px; height: 28px; border-radius: 14px;
+    font-weight: 700; font-size: 0.8rem; padding: 0 0.5rem;
+  }
+  .indicator-score-badge.green { background: rgba(16,185,129,0.15); color: #34d399; }
+  .indicator-score-badge.yellow { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .indicator-score-badge.red { background: rgba(239,68,68,0.15); color: #f87171; }
+  .indicator-bar-bg { height: 6px; background: var(--navy-mid); border-radius: 3px; overflow: hidden; margin: 0.5rem 0; }
+  .indicator-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .indicator-bar-fill.green { background: linear-gradient(90deg, #10b981, #34d399); }
+  .indicator-bar-fill.yellow { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .indicator-bar-fill.red { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .indicator-explanation { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
+  .overall-score-ring {
+    width: 120px; height: 120px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; flex-direction: column;
+    font-weight: 800; font-size: 2rem; color: #fff; flex-shrink: 0;
+  }
+  .overall-score-ring.green { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05)); border: 3px solid #10b981; }
+  .overall-score-ring.yellow { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05)); border: 3px solid #f59e0b; }
+  .overall-score-ring.red { background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05)); border: 3px solid #ef4444; }
+  .overall-score-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.15rem; }
+  .scanner-disclaimer {
+    background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 8px; padding: 1rem 1.25rem; font-size: 0.8rem; color: var(--text-dim);
+    line-height: 1.6; margin-top: 1.5rem;
+  }
+  .scanner-disclaimer strong { color: #fbbf24; }
+  .feedback-btns { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  .feedback-btn {
+    padding: 0.4rem 1rem; border: 1px solid var(--border); background: var(--navy-light);
+    color: var(--text-dim); border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    font-family: inherit; transition: all 0.2s;
+  }
+  .feedback-btn:hover { border-color: var(--blue); color: var(--text); }
+  .feedback-btn.selected { border-color: var(--blue); color: #fff; background: rgba(59,130,246,0.15); }
+
+  /* PsyOp Feed - Topic-Paired Narrative Table */
+  .feed-section { margin-top: 2.5rem; }
+  .feed-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
+  }
+  .feed-section-title {
+    font-size: 1.3rem; font-weight: 800; color: #fff;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .feed-live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #10b981;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  }
+  .feed-timestamp {
+    font-size: 0.78rem; color: var(--text-dim);
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .feed-table-header {
+    display: grid; grid-template-columns: 1fr 1fr 200px; gap: 0;
+    border-radius: var(--radius) var(--radius) 0 0; overflow: hidden;
+    margin-bottom: 0;
+  }
+  @media (max-width: 900px) { .feed-table-header { display: none; } }
+  .feed-th {
+    padding: 0.7rem 1rem; font-weight: 700; font-size: 0.85rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .feed-th.left { background: rgba(59,130,246,0.1); color: #60a5fa; border-bottom: 2px solid #3b82f6; }
+  .feed-th.right { background: rgba(239,68,68,0.1); color: #f87171; border-bottom: 2px solid #ef4444; }
+  .feed-th.psyop { background: rgba(245,158,11,0.1); color: #fbbf24; border-bottom: 2px solid #f59e0b; }
+  .feed-row {
+    display: grid; grid-template-columns: 1fr 1fr 200px; gap: 0;
+    background: var(--card); border: 1px solid var(--border);
+    border-top: none; transition: border-color 0.2s; cursor: pointer;
+  }
+  .feed-row:first-of-type { border-top: 1px solid var(--border); }
+  .feed-row:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+  .feed-row:hover { border-color: #3a4068; }
+  @media (max-width: 900px) {
+    .feed-row { grid-template-columns: 1fr; border-top: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.75rem; }
+  }
+  .feed-cell {
+    padding: 0.85rem 1rem; border-right: 1px solid rgba(42,47,78,0.4);
+    min-height: 60px;
+  }
+  .feed-cell:last-child { border-right: none; }
+  @media (max-width: 900px) {
+    .feed-cell { border-right: none; border-bottom: 1px solid rgba(42,47,78,0.3); }
+    .feed-cell:last-child { border-bottom: none; }
+    .feed-cell::before {
+      display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 0.3rem;
+    }
+    .feed-cell.left-cell::before { content: 'LEFT PERSPECTIVE'; color: #60a5fa; }
+    .feed-cell.right-cell::before { content: 'RIGHT PERSPECTIVE'; color: #f87171; }
+    .feed-cell.psyop-cell::before { content: 'PSYOP ANALYSIS'; color: #fbbf24; }
+  }
+  .feed-topic-label {
+    font-size: 0.95rem; font-weight: 700; color: #fff;
+    padding: 0.5rem 1rem; background: var(--navy-mid);
+    border: 1px solid var(--border); border-bottom: none;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .feed-topic-label:first-of-type { border-radius: var(--radius) var(--radius) 0 0; margin-top: 0.75rem; }
+  .feed-headline {
+    font-size: 0.85rem; font-weight: 600; line-height: 1.35;
+    margin-bottom: 0.3rem;
+  }
+  .feed-cell.left-cell .feed-headline { color: #93c5fd; }
+  .feed-cell.right-cell .feed-headline { color: #fca5a5; }
+  .feed-summary {
+    font-size: 0.78rem; color: var(--text-dim); line-height: 1.5;
+  }
+  .feed-sources {
+    font-size: 0.68rem; color: var(--text-dim); font-style: italic;
+    margin-top: 0.35rem; opacity: 0.7;
+  }
+  .feed-blackout {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 0.5rem;
+  }
+  .feed-blackout-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.8rem; font-weight: 700; color: #fbbf24;
+    background: rgba(245,158,11,0.1); border: 1px dashed rgba(245,158,11,0.3);
+    padding: 0.3rem 0.8rem; border-radius: 6px;
+  }
+  .feed-blackout-sub {
+    font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;
+  }
+  .feed-psyop-cell {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; gap: 0.3rem;
+  }
+  .feed-psyop-score {
+    font-size: 1.4rem; font-weight: 800; line-height: 1;
+  }
+  .feed-psyop-score.high { color: #f87171; }
+  .feed-psyop-score.moderate { color: #fbbf24; }
+  .feed-psyop-score.low { color: #34d399; }
+  .feed-psyop-label {
+    font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .feed-psyop-label.high { color: #f87171; }
+  .feed-psyop-label.moderate { color: #fbbf24; }
+  .feed-psyop-label.low { color: #34d399; }
+  .feed-indicator-tag {
+    font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 3px;
+    background: rgba(245,158,11,0.1); color: #fbbf24;
+    white-space: nowrap; display: inline-block; margin: 0.1rem;
+  }
+  .feed-psyop-detail {
+    font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; margin-top: 0.2rem;
+  }
+  .feed-stats {
+    display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .feed-stat {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; color: var(--text-dim);
+  }
+  .feed-stat-value { font-weight: 700; color: #fff; }
+  .feed-empty {
+    padding: 2.5rem 1rem; text-align: center; color: var(--text-dim); font-size: 0.9rem;
+  }
+  .feed-loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 3rem; color: var(--text-dim);
+  }
+
+  /* Control Grid Scorecard */
+  .cg-scorecard { margin-top: 1rem; }
+  .cg-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .cg-header h2 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+  .cg-net-score {
+    display: flex; align-items: center; gap: 0.75rem;
+    background: var(--navy-light); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.5rem;
+  }
+  .cg-net-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .cg-net-value { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+  .cg-net-value.positive { color: #f87171; }
+  .cg-net-value.negative { color: #34d399; }
+  .cg-net-value.neutral { color: var(--text-dim); }
+  .cg-columns {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+  }
+  @media (max-width: 768px) {
+    .cg-columns { grid-template-columns: 1fr; }
+  }
+  .cg-column { }
+  .cg-column-title {
+    font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 0.75rem 1rem;
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .cg-column-title.for-col { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-bottom: none; }
+  .cg-column-title.against-col { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2); border-bottom: none; }
+  .cg-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; border: 1px solid var(--border);
+    border-top: none; background: var(--card); cursor: pointer;
+    transition: background 0.2s; gap: 0.75rem;
+  }
+  .cg-item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+  .cg-item:hover { background: var(--navy-mid); }
+  .cg-item-title { font-size: 0.88rem; font-weight: 500; color: var(--text); flex: 1; }
+  .cg-item-score {
+    font-size: 1rem; font-weight: 800; min-width: 40px; text-align: right;
+    white-space: nowrap;
+  }
+  .cg-item-score.for-score { color: #f87171; }
+  .cg-item-score.against-score { color: #34d399; }
+  .cg-item-detail {
+    padding: 0.75rem 1rem; background: var(--navy); border: 1px solid var(--border);
+    border-top: none; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5;
+  }
+  .cg-item-meta {
+    display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem;
+    font-size: 0.72rem;
+  }
+  .cg-item-tag {
+    display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+    font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .cg-item-tag.bill { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .cg-item-tag.news { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .cg-item-tag.policy { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .cg-item-tag.executive_order { background: rgba(236,72,153,0.15); color: #f472b6; }
+  .cg-item-tag.international { background: rgba(6,182,212,0.15); color: #22d3ee; }
+  .cg-category-breakdown {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem; margin-top: 1.5rem;
+  }
+  .cg-cat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem; text-align: center;
+  }
+  .cg-cat-name {
+    font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.3rem;
+  }
+  .cg-cat-score { font-size: 1.1rem; font-weight: 800; }
+  .cg-scale-legend {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.5rem; padding: 0.75rem 1rem;
+    background: var(--navy-light); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 0.72rem; color: var(--text-dim);
+  }
+
+  /* Composite Risk Score */
+  .cg-risk-panel {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .cg-risk-gauge {
+    display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.25rem;
+  }
+  .cg-risk-circle {
+    width: 120px; height: 120px; border-radius: 50%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; border: 4px solid;
+    flex-shrink: 0;
+  }
+  .cg-risk-circle.low { border-color: #34d399; background: rgba(16,185,129,0.08); }
+  .cg-risk-circle.guarded { border-color: #60a5fa; background: rgba(96,165,250,0.08); }
+  .cg-risk-circle.transitional { border-color: #fbbf24; background: rgba(245,158,11,0.08); }
+  .cg-risk-circle.high { border-color: #f97316; background: rgba(249,115,22,0.08); }
+  .cg-risk-circle.severe { border-color: #ef4444; background: rgba(239,68,68,0.08); }
+  .cg-risk-pct { font-size: 2rem; font-weight: 900; line-height: 1; }
+  .cg-risk-pct.low { color: #34d399; }
+  .cg-risk-pct.guarded { color: #60a5fa; }
+  .cg-risk-pct.transitional { color: #fbbf24; }
+  .cg-risk-pct.high { color: #f97316; }
+  .cg-risk-pct.severe { color: #ef4444; }
+  .cg-risk-band { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem; }
+  .cg-risk-info { flex: 1; }
+  .cg-risk-formula {
+    font-size: 0.78rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.6;
+    background: var(--navy-light); padding: 0.6rem 0.8rem; border-radius: 6px; font-family: monospace;
+  }
+  .cg-variables { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+  .cg-var-card {
+    background: var(--navy-light); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;
+  }
+  .cg-var-label { font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
+  .cg-var-score-row { display: flex; align-items: center; gap: 0.5rem; }
+  .cg-var-score { font-size: 1.3rem; font-weight: 900; min-width: 2.5rem; }
+  .cg-var-bar { flex: 1; height: 8px; background: var(--navy-mid); border-radius: 4px; position: relative; overflow: hidden; }
+  .cg-var-bar-fill { position: absolute; top: 0; height: 100%; border-radius: 4px; transition: width 0.5s; }
+  .cg-var-rationale { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem; line-height: 1.4; }
+  .cg-multiplier-card {
+    background: var(--navy-light); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 0.75rem;
+    grid-column: 1 / -1;
+  }
+  .cg-overall-analysis {
+    margin-top: 1rem; padding: 0.85rem 1rem; background: var(--navy-light);
+    border-left: 3px solid rgba(255,255,255,0.2); border-radius: 0 8px 8px 0;
+    font-size: 0.85rem; color: var(--text); line-height: 1.5;
+  }
+
+  /* Control Grid Actors */
+  .cg-actors-section { margin-top: 2.5rem; }
+  .cg-actors-header {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;
+    padding: 0.75rem 1rem; border-radius: var(--radius); font-weight: 800; font-size: 1.15rem;
+  }
+  .cg-actors-header.proponent { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .cg-actors-header.opponent { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+  .cg-actor-type-group { margin-bottom: 1.5rem; }
+  .cg-actor-type-label {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-dim); margin-bottom: 0.5rem; padding-left: 0.25rem;
+  }
+  .cg-actor-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+  .cg-actor-card {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.85rem 1rem; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  }
+  .cg-actor-card:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); }
+  .cg-actor-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .cg-actor-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
+  .cg-actor-name a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.3); }
+  .cg-actor-name a:hover { text-decoration-color: #fff; }
+  .cg-actor-influence {
+    font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; white-space: nowrap;
+  }
+  .cg-actor-influence.high { background: rgba(239,68,68,0.15); color: #f87171; }
+  .cg-actor-influence.med { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .cg-actor-influence.low { background: rgba(107,114,128,0.15); color: #9ca3af; }
+  .cg-actor-meta {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; font-size: 0.72rem; color: var(--text-dim);
+  }
+  .cg-actor-meta span { background: var(--navy-light); padding: 0.1rem 0.4rem; border-radius: 3px; }
+  .cg-actor-summary { font-size: 0.82rem; color: var(--text); margin-top: 0.5rem; line-height: 1.4; }
+  .cg-actor-analysis { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.4rem; font-style: italic; }
+
+  /* State Breakdown */
+  .cg-state-section { margin-top: 2.5rem; }
+  .cg-state-header {
+    font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .cg-state-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+  .cg-state-card {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.6rem 0.75rem; text-align: center;
+  }
+  .cg-state-name { font-size: 0.85rem; font-weight: 700; color: #fff; }
+  .cg-state-counts { display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.3rem; font-size: 0.72rem; }
+  .cg-state-pro { color: #f87171; }
+  .cg-state-opp { color: #34d399; }
+  .cg-state-card.pro-dominant { border-color: rgba(239,68,68,0.3); }
+  .cg-state-card.opp-dominant { border-color: rgba(16,185,129,0.3); }
+  .cg-state-card.mixed { border-color: rgba(245,158,11,0.3); }
+
+  /* Network Graph */
+  .cg-network-container {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1rem; margin-top: 1rem; position: relative; overflow: hidden;
+  }
+  .cg-network-container svg { width: 100%; height: 500px; display: block; }
+  .cg-network-legend {
+    display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.75rem 0; font-size: 0.75rem; color: var(--text-dim);
+  }
+  .cg-network-legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .cg-network-legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .cg-network-tooltip {
+    position: absolute; background: var(--navy-deep); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.78rem; color: var(--text);
+    pointer-events: none; opacity: 0; transition: opacity 0.2s; max-width: 280px; z-index: 100;
+  }
+  .cg-network-tooltip.visible { opacity: 1; }
+
+  /* Submit Evidence */
+  .cg-submit-panel {
+    background: var(--navy-mid); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.25rem; margin-top: 1.5rem;
+  }
+  .cg-submit-panel h4 { color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .cg-submit-input {
+    width: 100%; background: var(--navy-light); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 0.75rem; font-size: 0.88rem; resize: vertical; min-height: 80px;
+    font-family: inherit;
+  }
+  .cg-submit-input:focus { outline: none; border-color: #fbbf24; }
+  .cg-submit-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; }
+  .cg-submit-url {
+    flex: 1; background: var(--navy-light); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 0.5rem 0.75rem; font-size: 0.85rem; font-family: inherit;
+  }
+  .cg-submit-url:focus { outline: none; border-color: #fbbf24; }
+  .cg-submit-btn {
+    padding: 0.5rem 1.25rem; background: #fbbf24; color: #000; font-weight: 700; border: none;
+    border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;
+  }
+  .cg-submit-btn:hover { background: #f59e0b; }
+  .cg-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cg-submit-status { font-size: 0.8rem; margin-top: 0.5rem; }
+
+  /* Notification Bell */
+  .notif-bell {
+    position: relative; background: none; border: none; color: var(--text-dim);
+    font-size: 1.2rem; cursor: pointer; padding: 0.3rem; transition: color 0.2s;
+  }
+  .notif-bell:hover { color: #fff; }
+  .notif-badge {
+    position: absolute; top: -2px; right: -4px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--red); color: #fff; font-size: 0.6rem;
+    font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .notif-panel {
+    position: absolute; top: calc(100% + 8px); right: 0; width: 360px; max-height: 420px;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 150; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .notif-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+    font-size: 0.9rem; font-weight: 600; color: #fff;
+  }
+  .notif-list { overflow-y: auto; flex: 1; max-height: 340px; }
+  .notif-item {
+    padding: 0.75rem 1rem; border-bottom: 1px solid rgba(42,47,78,0.3);
+    cursor: pointer; transition: background 0.15s;
+  }
+  .notif-item:hover { background: var(--navy-light); }
+  .notif-item.unread { border-left: 3px solid var(--blue); }
+  .notif-item-title { font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 0.15rem; }
+  .notif-item-body { font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; }
+  .notif-item-time { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem; }
+  .notif-empty { padding: 2rem; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+
+  /* Toggle Switch */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.6rem 0; border-bottom: 1px solid rgba(42,47,78,0.3);
+  }
+  .toggle-label { font-size: 0.9rem; color: var(--text); }
+  .toggle-desc { font-size: 0.75rem; color: var(--text-dim); }
+  .toggle-switch {
+    width: 44px; height: 24px; border-radius: 12px; background: var(--navy-mid);
+    cursor: pointer; position: relative; border: 1px solid var(--border); transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--blue); border-color: var(--blue); }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: #fff; transition: transform 0.2s;
+  }
+  .toggle-switch.on::after { transform: translateX(20px); }
+
+  /* Spectrum Visualization */
+  .spectrum-bar {
+    position: relative; height: 48px; border-radius: 24px; margin: 2rem 0;
+    background: linear-gradient(90deg, #ef4444 0%, #f59e0b 25%, #10b981 45%, #10b981 55%, #f59e0b 75%, #ef4444 100%);
+    overflow: visible;
+  }
+  .spectrum-labels {
+    display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;
+  }
+  .spectrum-dot {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--navy); top: 50%; transform: translate(-50%, -50%);
+    cursor: pointer; transition: all 0.2s; z-index: 2;
+  }
+  .spectrum-dot:hover { width: 20px; height: 20px; z-index: 10; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+  .spectrum-tooltip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.6rem 0.8rem; white-space: nowrap; font-size: 0.75rem; color: var(--text);
+    pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .spectrum-dot:hover .spectrum-tooltip { opacity: 1; }
+  .amendment-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: var(--navy-light);
+    color: var(--text-dim); transition: all 0.2s; margin: 0.2rem;
+  }
+  .amendment-chip:hover { border-color: var(--blue); color: var(--text); }
+  .amendment-chip.active { border-color: var(--blue); color: #fff; background: rgba(59,130,246,0.15); }
+  .amendment-bar-row {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(42,47,78,0.3);
+  }
+  .amendment-bar-label { width: 100px; font-size: 0.8rem; color: var(--text-dim); flex-shrink: 0; }
+  .amendment-bar-track { flex: 1; height: 20px; background: var(--navy-mid); border-radius: 10px; overflow: hidden; display: flex; }
+  .amendment-bar-seg { height: 100%; transition: width 0.5s ease; }
+  .cfs-v2-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600;
+  }
+  .cfs-v2-badge.high { background: rgba(16,185,129,0.15); color: #34d399; }
+  .cfs-v2-badge.mid { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .cfs-v2-badge.low { background: rgba(239,68,68,0.15); color: #f87171; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-grid { grid-template-columns: 1fr; }
+    .cfs-components { grid-template-columns: repeat(2, 1fr); }
+    .header-inner { flex-wrap: wrap; height: auto; padding: 0.75rem 0; gap: 0.5rem; }
+    .search-bar { width: 100%; order: 3; }
+    .nav { order: 2; }
+    .detail-header { flex-direction: column; align-items: center; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const API_BASE = 'https://vsocmojximnnlrzdmeoz.supabase.co/functions/v1/civic-api';
+const SUPABASE_URL = 'https://vsocmojximnnlrzdmeoz.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzb2Ntb2p4aW1ubmxyemRtZW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTE2MjgsImV4cCI6MjA5MDEyNzYyOH0.y3fC43nOBv4ZMfiaPzPDvVZxwlERS_IFdclHZ1jbQv0';
+
+async function api(params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${API_BASE}?${qs}`);
+  return res.json();
+}
+
+async function apiPost(params, body) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${API_BASE}?${qs}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+// Supabase Auth helpers (using REST API directly, no SDK needed)
+const AUTH_URL = `${SUPABASE_URL}/auth/v1`;
+async function authSignUp(email, password) {
+  const res = await fetch(`${AUTH_URL}/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+    body: JSON.stringify({ email, password }),
+  });
+  return res.json();
+}
+async function authSignIn(email, password) {
+  const res = await fetch(`${AUTH_URL}/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+    body: JSON.stringify({ email, password }),
+  });
+  return res.json();
+}
+async function authSignOut(token) {
+  await fetch(`${AUTH_URL}/logout`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'apikey': ANON_KEY },
+  });
+}
+
+// Simple auth state (in-memory for session)
+let currentUser = null;
+let currentToken = null;
+function setAuthState(user, token) {
+  currentUser = user;
+  currentToken = token;
+}
+function getUser() { return currentUser; }
+function getToken() { return currentToken; }
+
+// CAS (Citizen Accessibility Score) helpers
+function cfsLevel(score) {
+  if (score === null || score === undefined) return 'none';
+  if (score >= 70) return 'high';
+  if (score >= 40) return 'mid';
+  return 'low';
+}
+
+function trendIcon(trend) {
+  switch (trend) {
+    case 'rising': return '\u2191';
+    case 'falling': return '\u2193';
+    case 'stable': return '\u2192';
+    case 'new': return '\u2605';
+    default: return '';
+  }
+}
+
+function CfsBadge({ score, small }) {
+  const level = cfsLevel(score);
+  const cls = `cfs-badge ${level}${small ? ' cfs-badge-sm' : ''}`;
+  return <div className={cls}>{score !== null && score !== undefined ? Math.round(score) : 'N/A'}</div>;
+}
+
+function PartyBadge({ party }) {
+  return <span className={`party-badge party-${party || 'I'}`}>{party || '?'}</span>;
+}
+
+function StatusBadge({ status }) {
+  const cls = `status-badge status-${(status || 'introduced').replace(/\s+/g, '_').toLowerCase()}`;
+  return <span className={cls}>{status || 'Unknown'}</span>;
+}
+
+function VotePosition({ position }) {
+  return <span className={`vote-${position}`}>{position.replace('_', ' ')}</span>;
+}
+
+// ======= AUTH MODAL =======
+function AuthModal({ onClose, onAuth }) {
+  const [mode, setMode] = useState('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setMessage(''); setLoading(true);
+    try {
+      if (mode === 'signup') {
+        const data = await authSignUp(email, password);
+        if (data.error) { setError(data.error.message || data.msg || 'Sign up failed'); setLoading(false); return; }
+        setMessage('Account created! Check your email to confirm, then sign in.');
+        setMode('signin');
+      } else {
+        const data = await authSignIn(email, password);
+        if (data.error) { setError(data.error_description || data.msg || 'Sign in failed'); setLoading(false); return; }
+        setAuthState(data.user, data.access_token);
+        onAuth(data.user);
+        onClose();
+      }
+    } catch (e) { setError('Network error. Try again.'); }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>&times;</button>
+        <h2>{mode === 'signin' ? 'Sign In' : 'Create Account'}</h2>
+        {message && <div style={{color:'var(--green)',fontSize:'0.85rem',marginBottom:'0.5rem'}}>{message}</div>}
+        {error && <div style={{color:'var(--red)',fontSize:'0.85rem',marginBottom:'0.5rem'}}>{error}</div>}
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <input className="auth-input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input className="auth-input" type="password" placeholder="Password (min 6 chars)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+          <button className="auth-btn" type="submit" disabled={loading}>{loading ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}</button>
+        </form>
+        <div className="auth-toggle" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); }}>
+          {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ======= ONBOARDING MODAL =======
+function OnboardingModal({ user, onClose }) {
+  const [step, setStep] = useState(1);
+  const [state, setState] = useState('');
+  const [district, setDistrict] = useState('');
+  const [interests, setInterests] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  const allInterests = ['Healthcare','Education','Defense','Economy','Immigration','Environment','Gun Rights','Civil Rights','Technology','Criminal Justice','Foreign Policy','Social Security','Taxes','Housing','Veterans'];
+  const states = [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia',
+    'Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland',
+    'Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey',
+    'New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina',
+    'South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+  ];
+
+  const toggleInterest = (i) => setInterests(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+
+  const save = async () => {
+    setSaving(true);
+    // Save profile via Supabase REST
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${getToken()}`, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ state_code: state, district: district || null, interests, onboarding_complete: true }),
+    });
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Welcome to GlassPalace!</h2>
+        {step === 1 && (
+          <div>
+            <p style={{color:'var(--text-dim)',marginBottom:'1rem'}}>Tell us where you are so we can show your representatives.</p>
+            <select className="auth-input" style={{width:'100%',marginBottom:'0.75rem'}} value={state} onChange={e => setState(e.target.value)}>
+              <option value="">Select your state...</option>
+              {states.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <input className="auth-input" style={{width:'100%'}} placeholder="District number (optional)" value={district} onChange={e => setDistrict(e.target.value)} />
+            <button className="auth-btn" style={{width:'100%',marginTop:'1rem'}} onClick={() => setStep(2)} disabled={!state}>Next</button>
+          </div>
+        )}
+        {step === 2 && (
+          <div>
+            <p style={{color:'var(--text-dim)',marginBottom:'1rem'}}>What topics interest you? We'll highlight relevant legislation.</p>
+            <div style={{display:'flex',flexWrap:'wrap',gap:'0.25rem',marginBottom:'1rem'}}>
+              {allInterests.map(i => (
+                <span key={i} className={`interest-chip ${interests.includes(i) ? 'selected' : ''}`} onClick={() => toggleInterest(i)}>{i}</span>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:'0.5rem'}}>
+              <button className="auth-btn" style={{flex:1,background:'var(--navy-mid)'}} onClick={() => setStep(1)}>Back</button>
+              <button className="auth-btn" style={{flex:1}} onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Get Started'}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ======= CONTACT TEMPLATE MODAL =======
+function ContactModal({ legislator, onClose, onContact }) {
+  const [copied, setCopied] = useState('');
+  const leg = legislator;
+
+  const templates = [
+    {
+      label: 'Support a Bill',
+      subject: `Support for Legislation - ${leg.state_code} Constituent`,
+      body: `Dear ${leg.title || 'Representative'} ${leg.last_name},\n\nAs your constituent in ${leg.state_code}, I am writing to express my support for [BILL NUMBER/NAME].\n\nThis legislation is important to me because [YOUR REASON].\n\nI urge you to vote in favor of this bill.\n\nThank you for your service.\n\nSincerely,\n[YOUR NAME]\n${leg.state_code} Constituent`
+    },
+    {
+      label: 'Oppose a Bill',
+      subject: `Opposition to Legislation - ${leg.state_code} Constituent`,
+      body: `Dear ${leg.title || 'Representative'} ${leg.last_name},\n\nAs your constituent in ${leg.state_code}, I am writing to express my opposition to [BILL NUMBER/NAME].\n\nI believe this legislation would [YOUR CONCERN].\n\nI urge you to vote against this bill.\n\nThank you for your time.\n\nSincerely,\n[YOUR NAME]\n${leg.state_code} Constituent`
+    },
+    {
+      label: 'Request a Meeting',
+      subject: `Meeting Request - ${leg.state_code} Constituent`,
+      body: `Dear ${leg.title || 'Representative'} ${leg.last_name},\n\nI am a constituent from ${leg.state_code} and I would like to request a meeting to discuss [TOPIC].\n\nI am available [YOUR AVAILABILITY].\n\nThank you for making time for your constituents.\n\nSincerely,\n[YOUR NAME]\n${leg.state_code} Constituent`
+    },
+    {
+      label: 'General Concern',
+      subject: `Constituent Concern - ${leg.state_code}`,
+      body: `Dear ${leg.title || 'Representative'} ${leg.last_name},\n\nAs your constituent in ${leg.state_code}, I am writing to express my concern about [ISSUE].\n\n[DESCRIBE YOUR CONCERN]\n\nI would appreciate hearing your position on this matter.\n\nThank you.\n\nSincerely,\n[YOUR NAME]\n${leg.state_code} Constituent`
+    }
+  ];
+
+  const copyText = (text, label) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(label);
+      setTimeout(() => setCopied(''), 2000);
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>&times;</button>
+        <h2>Message Templates for {leg.full_name}</h2>
+        <p style={{color:'var(--text-dim)',fontSize:'0.85rem',marginBottom:'1rem'}}>Click a template to copy it to your clipboard, then customize before sending.</p>
+        {templates.map((t, i) => (
+          <div key={i} className="template-card" onClick={() => { copyText(t.body, t.label); if (onContact) onContact('email'); }}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontWeight:600,color:'#fff',fontSize:'0.9rem'}}>{t.label}</span>
+              <span style={{fontSize:'0.75rem',color: copied === t.label ? 'var(--green)' : 'var(--text-dim)'}}>
+                {copied === t.label ? 'Copied!' : 'Click to copy'}
+              </span>
+            </div>
+            <div className="template-text">{t.body}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ======= HEADER =======
+function Header({ view, setView, onSearch, user, onAuthClick, onSignOut }) {
+  const [query, setQuery] = useState('');
+  return (
+    <header className="header">
+      <div className="header-inner">
+        <div className="logo" onClick={() => setView({ page: 'dashboard' })}>
+          <span className="logo-icon">\ud83c\udfd4</span>
+          <span className="logo-text">GlassPalace</span>
+          <span className="logo-badge">Beta</span>
+        </div>
+        <nav className="nav">
+          <button className={`nav-btn ${view.page === 'dashboard' ? 'active' : ''}`} onClick={() => setView({ page: 'dashboard' })}>Dashboard</button>
+          <button className={`nav-btn ${view.page === 'bills' ? 'active' : ''}`} onClick={() => setView({ page: 'bills' })}>Bills</button>
+          <button className={`nav-btn ${view.page === 'legislators' ? 'active' : ''}`} onClick={() => setView({ page: 'legislators' })}>Representatives</button>
+          <button className={`nav-btn ${view.page === 'spectrum' ? 'active' : ''}`} onClick={() => setView({ page: 'spectrum' })}>Constitution</button>
+          <button className={`nav-btn ${view.page === 'scanner' ? 'active' : ''}`} onClick={() => setView({ page: 'scanner' })} style={view.page === 'scanner' ? {} : {color:'#f87171'}}>PsyOp Scanner</button>
+          <button className={`nav-btn ${view.page === 'control-grid' ? 'active' : ''}`} onClick={() => setView({ page: 'control-grid' })} style={view.page === 'control-grid' ? {} : {color:'#fbbf24'}}>Control Grid</button>
+        </nav>
+        <div className="search-bar">
+          <span>\ud83d\udd0d</span>
+          <input
+            placeholder="Search bills or reps..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && query.trim()) onSearch(query.trim()); }}
+          />
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginLeft:'0.75rem'}}>
+          {user ? (
+            <>
+              <NotificationBell user={user} setView={setView} />
+              <button className={`nav-btn ${view.page === 'watchlist' ? 'active' : ''}`} onClick={() => setView({ page: 'watchlist' })}>My Watchlist</button>
+              <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>{user.email?.split('@')[0]}</span>
+              <button className="nav-btn" style={{fontSize:'0.8rem'}} onClick={onSignOut}>Sign Out</button>
+            </>
+          ) : (
+            <button className="nav-btn" style={{background:'var(--blue)',color:'#fff',borderRadius:6}} onClick={onAuthClick}>Sign In</button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ======= DASHBOARD =======
+function Dashboard({ setView }) {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'stats' }).then(d => { setStats(d); setLoading(false); });
+  }, []);
+
+  if (loading) return <div className="loading"><div className="spinner"></div><p style={{marginTop:'1rem'}}>Loading dashboard...</p></div>;
+
+  const { counts = {}, top_cfs = [], bottom_cfs = [], recent_bills = [] } = stats || {};
+  const noData = counts.legislators === 0;
+
+  return (
+    <div>
+      {noData && (
+        <div className="waitlist-banner">
+          <h2>Welcome to GlassPalace Civic Platform</h2>
+          <p>Data ingestion is pending. Once loaded, you'll see live legislation tracking, representative grades, and more.</p>
+          <p style={{fontSize: '0.8rem', color: 'var(--text-dim)'}}>If you're an admin, open the <strong>admin-ingest.html</strong> page to trigger data loading.</p>
+        </div>
+      )}
+
+      <div className="stats-grid">
+        <div className="card stat-card">
+          <div className="stat-value">{counts.legislators || 0}</div>
+          <div className="stat-label">Representatives</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value">{counts.bills || 0}</div>
+          <div className="stat-label">Bills Tracked</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value">{counts.votes || 0}</div>
+          <div className="stat-label">Roll Call Votes</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value">{counts.vote_records ? counts.vote_records.toLocaleString() : 0}</div>
+          <div className="stat-label">Individual Votes</div>
+        </div>
+      </div>
+
+      <div style={{display:'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">\ud83c\udfc6 Top Citizen Accessibility</span>
+            <button className="nav-btn" onClick={() => setView({ page: 'legislators', sort: 'cfs_score', order: 'desc' })}>View All</button>
+          </div>
+          {top_cfs.length === 0 ? (
+            <p style={{color:'var(--text-dim)', fontSize:'0.9rem'}}>Citizen Accessibility Scores will appear after data ingestion and calculation.</p>
+          ) : (
+            top_cfs.map(leg => (
+              <div key={leg.id} className="clickable" onClick={() => setView({ page: 'legislator', id: leg.id })} style={{display:'flex', alignItems:'center', gap:'0.75rem', padding:'0.5rem 0', borderBottom:'1px solid var(--border)'}}>
+                <CfsBadge score={leg.cfs_score} small />
+                <PartyBadge party={leg.party} />
+                <span style={{flex:1, color:'#fff', fontWeight:500}}>{leg.full_name}</span>
+                <span style={{color:'var(--text-dim)', fontSize:'0.8rem'}}>{leg.state_code} \u00b7 {leg.chamber}</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">\ud83d\udcdc Recent Legislation</span>
+            <button className="nav-btn" onClick={() => setView({ page: 'bills' })}>View All</button>
+          </div>
+          {recent_bills.length === 0 ? (
+            <p style={{color:'var(--text-dim)', fontSize:'0.9rem'}}>Bills will appear after data ingestion.</p>
+          ) : (
+            recent_bills.map(bill => (
+              <div key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)'}}>
+                <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                  <span className="bill-number">{bill.bill_number}</span>
+                  <StatusBadge status={bill.status} />
+                </div>
+                <div style={{fontSize:'0.85rem', color:'var(--text-dim)', marginTop:'0.2rem'}}>{bill.short_title || bill.title}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="waitlist-banner" style={{marginTop:'2rem'}}>
+        <h2>Get Early Access</h2>
+        <p>Be the first to know when new features launch. Join our waitlist.</p>
+        <WaitlistForm />
+      </div>
+    </div>
+  );
+}
+
+// ======= WAITLIST FORM =======
+function WaitlistForm() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('');
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!email) return;
+    setStatus('sending');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/waitlist-signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, product: 'civic', source: 'civic-app' }),
+      });
+      const data = await res.json();
+      setStatus(data.status === 'already_registered' ? 'already' : 'success');
+      setEmail('');
+    } catch {
+      setStatus('error');
+    }
+  }
+
+  if (status === 'success') return <p style={{color:'var(--green)', fontWeight:600}}>You're on the list!</p>;
+  if (status === 'already') return <p style={{color:'var(--amber)', fontWeight:600}}>You're already signed up!</p>;
+
+  return (
+    <form className="waitlist-form" onSubmit={submit}>
+      <input className="waitlist-input" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
+      <button className="waitlist-submit" type="submit" disabled={status === 'sending'}>{status === 'sending' ? 'Joining...' : 'Join Waitlist'}</button>
+    </form>
+  );
+}
+
+// ======= BILLS LIST =======
+function BillsList({ setView }) {
+  const [bills, setBills] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ page: 1, status: 'all', search: '', sort: '', order: 'desc', subject: '' });
+  const [subjects, setSubjects] = useState([]);
+
+  useEffect(() => {
+    api({ route: 'subjects' }).then(d => setSubjects(d.subjects || []));
+  }, []);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = { route: 'bills', page: filters.page, limit: 20 };
+    if (filters.status !== 'all') params.status = filters.status;
+    if (filters.search) params.search = filters.search;
+    if (filters.sort) params.sort = filters.sort;
+    if (filters.order) params.order = filters.order;
+    if (filters.subject) params.subject = filters.subject;
+    api(params).then(d => {
+      setBills(d.bills || []);
+      setPagination(d.pagination || {});
+      setLoading(false);
+    });
+  }, [filters]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div>
+      <h1 style={{fontSize:'1.5rem', fontWeight:800, color:'#fff', marginBottom:'1.5rem'}}>\ud83d\udcdc Legislation Tracker</h1>
+
+      <div className="filters">
+        <input
+          className="waitlist-input"
+          style={{maxWidth:250}}
+          placeholder="Search bills..."
+          value={filters.search}
+          onChange={e => setFilters(f => ({ ...f, search: e.target.value, page: 1 }))}
+        />
+        <select className="filter-select" value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value, page: 1 }))}>
+          <option value="all">All Statuses</option>
+          <option value="introduced">Introduced</option>
+          <option value="committee">In Committee</option>
+          <option value="passed_house">Passed House</option>
+          <option value="passed_senate">Passed Senate</option>
+          <option value="passed_both">Passed Both</option>
+          <option value="signed">Signed</option>
+          <option value="vetoed">Vetoed</option>
+        </select>
+        {subjects.length > 0 && (
+          <select className="filter-select" value={filters.subject} onChange={e => setFilters(f => ({ ...f, subject: e.target.value, page: 1 }))}>
+            <option value="">All Subjects</option>
+            {subjects.slice(0, 30).map(s => <option key={s.name} value={s.name}>{s.name} ({s.count})</option>)}
+          </select>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="loading"><div className="spinner"></div></div>
+      ) : bills.length === 0 ? (
+        <div className="card" style={{textAlign:'center', padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)'}}>No bills found. {pagination.total === 0 ? 'Run data ingestion to load bills.' : 'Try adjusting your filters.'}</p>
+        </div>
+      ) : (
+        <div className="card" style={{padding:0}}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{cursor:'pointer'}} onClick={() => setFilters(f => ({...f, sort: 'freedom_score', order: f.sort === 'freedom_score' && f.order === 'desc' ? 'asc' : 'desc', page: 1}))}>
+                    Freedom {filters.sort === 'freedom_score' ? (filters.order === 'desc' ? '\u25bc' : '\u25b2') : ''}
+                  </th>
+                  <th>Bill</th>
+                  <th>Title</th>
+                  <th>Sponsor</th>
+                  <th>Status</th>
+                  <th>Subject</th>
+                  <th>Last Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bills.map(bill => (
+                  <tr key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })}>
+                    <td><CfsBadge score={bill.freedom_score} small /></td>
+                    <td><span className="bill-number">{bill.bill_number}</span></td>
+                    <td style={{maxWidth:300}}>
+                      <div style={{fontWeight:500, color:'#fff', fontSize:'0.85rem'}}>{bill.short_title || bill.title}</div>
+                    </td>
+                    <td>
+                      {bill.sponsor ? (
+                        <div style={{display:'flex',alignItems:'center',gap:'0.4rem'}}>
+                          <PartyBadge party={bill.sponsor.party} />
+                          <span style={{fontSize:'0.85rem'}}>{bill.sponsor.full_name}</span>
+                        </div>
+                      ) : <span style={{color:'var(--text-dim)'}}>—</span>}
+                    </td>
+                    <td><StatusBadge status={bill.status} /></td>
+                    <td>{bill.subjects && bill.subjects.length > 0 ? bill.subjects.slice(0,2).map(s => <span key={s} className="subject-tag">{s}</span>) : <span style={{color:'var(--text-dim)'}}>—</span>}</td>
+                    <td style={{fontSize:'0.8rem', color:'var(--text-dim)'}}>{bill.last_action_date || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {pagination.pages > 1 && (
+        <div className="pagination">
+          <button className="page-btn" disabled={filters.page <= 1} onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}>Prev</button>
+          <span style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Page {pagination.page} of {pagination.pages}</span>
+          <button className="page-btn" disabled={filters.page >= pagination.pages} onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}>Next</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= BILL DETAIL =======
+function BillDetail({ id, setView }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'bill', id }).then(d => { setData(d); setLoading(false); });
+  }, [id]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+  if (!data || !data.bill) return <div className="card"><p>Bill not found.</p></div>;
+
+  const { bill, actions = [], cosponsors = [], votes = [], spectrum } = data;
+
+  return (
+    <div>
+      <button className="back-btn" onClick={() => setView({ page: 'bills' })}>\u2190 Back to Bills</button>
+
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:'1rem', justifyContent:'space-between', flexWrap:'wrap'}}>
+          <div>
+            <div style={{display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.5rem'}}>
+              <span className="bill-number" style={{fontSize:'1.1rem'}}>{bill.bill_number}</span>
+              <StatusBadge status={bill.status} />
+            </div>
+            <h1 style={{fontSize:'1.4rem', fontWeight:800, color:'#fff', marginBottom:'0.5rem'}}>{bill.title}</h1>
+            {bill.short_title && bill.short_title !== bill.title && (
+              <p style={{color:'var(--text-dim)', fontStyle:'italic', marginBottom:'0.5rem'}}>{bill.short_title}</p>
+            )}
+          </div>
+          {spectrum && (
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:'0.7rem', color:'var(--text-dim)', textTransform:'uppercase', letterSpacing:'0.05em'}}>BoR Impact</div>
+              <div style={{fontSize:'1.8rem', fontWeight:800, color: Math.abs(spectrum.position) <= 20 ? 'var(--green)' : Math.abs(spectrum.position) <= 50 ? 'var(--amber)' : 'var(--red)'}}>{spectrum.position > 0 ? '+' : ''}{spectrum.position}</div>
+            </div>
+          )}
+        </div>
+
+        {bill.sponsor && (
+          <div style={{marginTop:'1rem', display:'flex', alignItems:'center', gap:'0.5rem'}}>
+            <span style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Sponsor:</span>
+            <PartyBadge party={bill.sponsor.party} />
+            <a style={{cursor:'pointer'}} onClick={() => setView({ page: 'legislator', id: bill.sponsor.id })}>{bill.sponsor.full_name}</a>
+            <span style={{color:'var(--text-dim)', fontSize:'0.8rem'}}>({bill.sponsor.state_code})</span>
+            {bill.sponsor.cfs_score && <CfsBadge score={bill.sponsor.cfs_score} small />}
+          </div>
+        )}
+
+        {bill.summary_text && (
+          <div style={{marginTop:'1rem', padding:'1rem', background:'var(--navy)', borderRadius:8, fontSize:'0.9rem', color:'var(--text-dim)'}}>
+            {bill.summary_text}
+          </div>
+        )}
+
+        <div style={{marginTop:'1rem', display:'flex', gap:'1rem', flexWrap:'wrap', fontSize:'0.8rem', color:'var(--text-dim)'}}>
+          <span>Introduced: {bill.introduced_date || '—'}</span>
+          <span>Last Action: {bill.last_action_date || '—'}</span>
+          {bill.congress_gov_id && <a href={`https://www.congress.gov/bill/119th-congress/${bill.bill_type === 'hr' ? 'house-bill' : 'senate-bill'}/${bill.bill_number.replace(/\D/g,'')}`} target="_blank" rel="noopener">Congress.gov \u2197</a>}
+        </div>
+      </div>
+
+      {/* Spectrum Analysis */}
+      {spectrum && (
+        <div className="card" style={{marginBottom:'1.5rem'}}>
+          <div className="card-header"><span className="card-title">Constitutional Impact Analysis</span></div>
+          <div style={{display:'flex',alignItems:'center',gap:'1.5rem',flexWrap:'wrap'}}>
+            <div style={{textAlign:'center',minWidth:80}}>
+              <div style={{fontSize:'2rem',fontWeight:800,color: Math.abs(spectrum.position) <= 20 ? 'var(--green)' : Math.abs(spectrum.position) <= 50 ? 'var(--amber)' : 'var(--red)'}}>
+                {spectrum.position > 0 ? '+' : ''}{spectrum.position}
+              </div>
+              <div style={{fontSize:'0.7rem',color:'var(--text-dim)'}}>
+                {Math.abs(spectrum.position) <= 20 ? 'Minimal BoR Impact' : spectrum.position < 0 ? 'Gov Expansion (Left)' : 'Gov Expansion (Right)'}
+              </div>
+            </div>
+            <div style={{flex:1}}>
+              <p style={{fontSize:'0.9rem',color:'var(--text)',marginBottom:'0.5rem'}}>{spectrum.analysis_text}</p>
+              <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}}>
+                <span style={{fontSize:'0.75rem',color:'var(--text-dim)'}}>Affected:</span>
+                {(spectrum.affected_amendments || []).map(a => (
+                  <span key={a} className="subject-tag">{AMENDMENT_NAMES[a] || `${a}th Amendment`}</span>
+                ))}
+              </div>
+              {spectrum.confidence && (
+                <span style={{display:'inline-block',marginTop:'0.5rem',fontSize:'0.7rem',color:'var(--text-dim)',background:'var(--navy)',padding:'0.15rem 0.5rem',borderRadius:10}}>
+                  AI Confidence: {spectrum.confidence}%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="detail-grid">
+        <div className="card">
+          <div className="card-header"><span className="card-title">Actions Timeline</span></div>
+          {actions.length === 0 ? <p style={{color:'var(--text-dim)'}}>No actions recorded.</p> : (
+            <div style={{maxHeight:300, overflowY:'auto'}}>
+              {actions.map((a, i) => (
+                <div key={i} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)', fontSize:'0.85rem'}}>
+                  <div style={{color:'var(--blue)', fontWeight:600, fontSize:'0.75rem'}}>{a.action_date} {a.chamber && `\u00b7 ${a.chamber}`}</div>
+                  <div style={{color:'var(--text)'}}>{a.description}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="card" style={{marginBottom:'1.5rem'}}>
+            <div className="card-header"><span className="card-title">Cosponsors ({cosponsors.length})</span></div>
+            {cosponsors.length === 0 ? <p style={{color:'var(--text-dim)'}}>No cosponsors.</p> : (
+              <div style={{maxHeight:200, overflowY:'auto'}}>
+                {cosponsors.map((c, i) => c && (
+                  <div key={i} className="clickable" onClick={() => setView({ page: 'legislator', id: c.id })} style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.3rem 0',borderBottom:'1px solid var(--border)'}}>
+                    <PartyBadge party={c.party} />
+                    <span style={{fontSize:'0.85rem'}}>{c.full_name}</span>
+                    <span style={{fontSize:'0.75rem',color:'var(--text-dim)',marginLeft:'auto'}}>{c.state_code}</span>
+                    {c.cfs_score && <CfsBadge score={c.cfs_score} small />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header"><span className="card-title">Roll Call Votes</span></div>
+            {votes.length === 0 ? <p style={{color:'var(--text-dim)'}}>No roll call votes recorded.</p> : (
+              votes.map((v, i) => (
+                <div key={i} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)', fontSize:'0.85rem'}}>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span style={{fontWeight:600, color:'#fff'}}>{v.chamber} Vote #{v.vote_number}</span>
+                    <span style={{color:'var(--text-dim)', fontSize:'0.75rem'}}>{v.vote_date}</span>
+                  </div>
+                  <div style={{color:'var(--text-dim)'}}>{v.question}</div>
+                  <div style={{marginTop:'0.25rem'}}>
+                    Result: <strong style={{color: v.result?.toLowerCase().includes('pass') ? 'var(--green)' : 'var(--red)'}}>{v.result}</strong>
+                    <span style={{marginLeft:'0.75rem',fontSize:'0.8rem'}}>Yea: {v.yea_count} | Nay: {v.nay_count} | NV: {v.not_voting_count}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ======= LEGISLATORS LIST =======
+function LegislatorsList({ setView }) {
+  const [legislators, setLegislators] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ page: 1, chamber: '', party: '', state: '', search: '', sort: 'cfs_score', order: 'desc' });
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = { route: 'legislators', page: filters.page, limit: 50 };
+    if (filters.chamber) params.chamber = filters.chamber;
+    if (filters.party) params.party = filters.party;
+    if (filters.state) params.state = filters.state;
+    if (filters.search) params.search = filters.search;
+    if (filters.sort) params.sort = filters.sort;
+    if (filters.order) params.order = filters.order;
+    api(params).then(d => {
+      setLegislators(d.legislators || []);
+      setPagination(d.pagination || {});
+      setLoading(false);
+    });
+  }, [filters]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const states = [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia',
+    'Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland',
+    'Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey',
+    'New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina',
+    'South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming',
+    'American Samoa','District of Columbia','Guam','Northern Mariana Islands','Puerto Rico','Virgin Islands'
+  ];
+
+  return (
+    <div>
+      <h1 style={{fontSize:'1.5rem', fontWeight:800, color:'#fff', marginBottom:'1.5rem'}}>\ud83c\udfd4 Representatives</h1>
+
+      <div className="filters">
+        <input className="waitlist-input" style={{maxWidth:200}} placeholder="Search name..." value={filters.search} onChange={e => setFilters(f => ({...f, search: e.target.value, page: 1}))} />
+        <select className="filter-select" value={filters.chamber} onChange={e => setFilters(f => ({...f, chamber: e.target.value, page: 1}))}>
+          <option value="">All Chambers</option>
+          <option value="house">House</option>
+          <option value="senate">Senate</option>
+        </select>
+        <select className="filter-select" value={filters.party} onChange={e => setFilters(f => ({...f, party: e.target.value, page: 1}))}>
+          <option value="">All Parties</option>
+          <option value="Republican">Republican</option>
+          <option value="Democratic">Democrat</option>
+          <option value="Independent">Independent</option>
+        </select>
+        <select className="filter-select" value={filters.state} onChange={e => setFilters(f => ({...f, state: e.target.value, page: 1}))}>
+          <option value="">All States</option>
+          {states.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <button className="filter-select" style={{cursor:'pointer', minWidth:140, textAlign:'center'}} onClick={() => setFilters(f => ({...f, order: f.order === 'desc' ? 'asc' : 'desc', page: 1}))}>
+          CAS {filters.order === 'desc' ? '\u2b07 High\u2192Low' : '\u2b06 Low\u2192High'}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="loading"><div className="spinner"></div></div>
+      ) : legislators.length === 0 ? (
+        <div className="card" style={{textAlign:'center', padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)'}}>No representatives found. {pagination.total === 0 ? 'Run data ingestion to load legislators.' : 'Try adjusting your filters.'}</p>
+        </div>
+      ) : (
+        <div className="card" style={{padding:0}}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{cursor:'pointer'}} onClick={() => setFilters(f => ({...f, order: f.order === 'desc' ? 'asc' : 'desc', page: 1}))}>CAS {filters.order === 'desc' ? '\u25bc' : '\u25b2'}</th>
+                  <th>Name</th>
+                  <th>Party</th>
+                  <th>State</th>
+                  <th>Chamber</th>
+                  <th>District</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                {legislators.map(leg => (
+                  <tr key={leg.id} className="clickable" onClick={() => setView({ page: 'legislator', id: leg.id })}>
+                    <td><CfsBadge score={leg.cfs_score} small /></td>
+                    <td style={{fontWeight:600, color:'#fff'}}>{leg.full_name}</td>
+                    <td><PartyBadge party={leg.party} /></td>
+                    <td>{leg.state_code}</td>
+                    <td style={{textTransform:'capitalize'}}>{leg.chamber}</td>
+                    <td>{leg.district || '—'}</td>
+                    <td><span className={`trend ${leg.cfs_trend || ''}`}>{trendIcon(leg.cfs_trend)} {leg.cfs_trend || '—'}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {pagination.pages > 1 && (
+        <div className="pagination">
+          <button className="page-btn" disabled={filters.page <= 1} onClick={() => setFilters(f => ({...f, page: f.page - 1}))}>Prev</button>
+          <span style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Page {pagination.page} of {pagination.pages}</span>
+          <button className="page-btn" disabled={filters.page >= pagination.pages} onClick={() => setFilters(f => ({...f, page: f.page + 1}))}>Next</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= LEGISLATOR DETAIL =======
+function LegislatorDetail({ id, setView }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'legislator', id }).then(d => { setData(d); setLoading(false); });
+  }, [id]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+  if (!data || !data.legislator) return <div className="card"><p>Representative not found.</p></div>;
+
+  const { legislator: leg, cfs_history = [], sponsored_bills = [], recent_votes = [], voting_stats = {}, contact_count = 0 } = data;
+  const cfsNotes = cfs_history[0]?.notes ? JSON.parse(cfs_history[0].notes) : null;
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [contacted, setContacted] = useState(false);
+
+  const logContact = (method) => {
+    const user = getUser();
+    if (user) {
+      apiPost({ route: 'contact-log' }, { user_id: user.id, legislator_id: leg.id, contact_method: method });
+    }
+    setContacted(true);
+    setTimeout(() => setContacted(false), 3000);
+  };
+
+  // CAS explainability
+  const casFactors = [];
+  if (leg.cfs_score !== null) {
+    const hasWebsite = !!leg.website_url;
+    const hasPhone = !!leg.phone;
+    const hasOffice = !!leg.office_address;
+    const contactItems = [hasWebsite, hasPhone, hasOffice].filter(Boolean).length;
+    casFactors.push({ label: 'Transparency', weight: '40%', detail: `${contactItems}/3 contact channels (website, phone, office)`, score: Math.round(contactItems / 3 * 100) });
+    const billCount = sponsored_bills.length;
+    casFactors.push({ label: 'Sponsorship Activity', weight: '35%', detail: `${billCount} bill${billCount !== 1 ? 's' : ''} sponsored`, score: Math.min(100, billCount * 10) });
+    const hasEmail = !!leg.email;
+    const hasTwitter = !!leg.twitter_handle;
+    const accessItems = [hasEmail, hasTwitter, hasWebsite, hasPhone].filter(Boolean).length;
+    casFactors.push({ label: 'Accessibility', weight: '25%', detail: `${accessItems}/4 contact methods available`, score: Math.round(accessItems / 4 * 100) });
+  }
+
+  return (
+    <div>
+      <button className="back-btn" onClick={() => setView({ page: 'legislators' })}>\u2190 Back to Representatives</button>
+
+      <div className="detail-header">
+        {leg.photo_url ? (
+          <img className="detail-photo" src={leg.photo_url} alt={leg.full_name} />
+        ) : (
+          <div className="detail-photo" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'2.5rem'}}>\ud83c\udfd4</div>
+        )}
+        <div className="detail-info" style={{flex:1}}>
+          <h1>{leg.full_name}</h1>
+          <div className="detail-meta">
+            <span><PartyBadge party={leg.party} /> {leg.party}</span>
+            <span>{leg.state_code}{leg.district ? `-${leg.district}` : ''}</span>
+            <span style={{textTransform:'capitalize'}}>{leg.chamber}</span>
+            {leg.title && <span>{leg.title}</span>}
+          </div>
+          <div className="contact-actions">
+            {leg.phone && <a href={`tel:${leg.phone}`} className="contact-btn contact-btn-call" onClick={() => logContact('call')}>\ud83d\udcde Call {leg.phone}</a>}
+            {leg.email ? <a href={`mailto:${leg.email}`} className="contact-btn contact-btn-email" onClick={() => logContact('email')}>\u2709 Email</a>
+              : <button className="contact-btn contact-btn-email" onClick={() => setShowTemplates(true)}>\u2709 Message Templates</button>}
+            {leg.twitter_handle && <a href={`https://x.com/${leg.twitter_handle}`} target="_blank" rel="noopener" className="contact-btn contact-btn-tweet" onClick={() => logContact('tweet')}>@ Post on X</a>}
+            {leg.website_url && <a href={leg.website_url} target="_blank" rel="noopener" className="contact-btn contact-btn-web" onClick={() => logContact('website')}>\ud83c\udf10 Website</a>}
+          </div>
+          {contact_count > 0 && <div className="community-stat">\ud83d\udc65 {contact_count} citizen{contact_count !== 1 ? 's' : ''} contacted this rep</div>}
+          {contacted && <div style={{color:'var(--green)',fontSize:'0.8rem',marginTop:'0.25rem'}}>Contact logged!</div>}
+        </div>
+        <div style={{textAlign:'center'}}>
+          <CfsBadge score={leg.cfs_score} />
+          <div style={{marginTop:'0.5rem'}}>
+            <span className={`trend ${leg.cfs_trend || ''}`}>{trendIcon(leg.cfs_trend)} {leg.cfs_trend || 'pending'}</span>
+          </div>
+          <div style={{fontSize:'0.7rem', color:'var(--text-dim)', marginTop:'0.25rem'}}>CAS</div>
+        </div>
+      </div>
+
+      {showTemplates && <ContactModal legislator={leg} onClose={() => setShowTemplates(false)} onContact={logContact} />}
+
+      {/* CAS Breakdown with Explainability */}
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Citizen Accessibility Score</span></div>
+        {leg.cfs_score !== null ? (
+          <div>
+            <div className="cfs-meter">
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'0.25rem'}}>
+                <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>0</span>
+                <span style={{fontSize:'1.2rem',fontWeight:800,color:'#fff'}}>{Math.round(leg.cfs_score)}/100</span>
+                <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>100</span>
+              </div>
+              <div className="cfs-bar-bg">
+                <div className={`cfs-bar-fill ${cfsLevel(leg.cfs_score)}`} style={{width: `${leg.cfs_score}%`}}></div>
+              </div>
+            </div>
+            <p style={{fontSize:'0.8rem',color:'var(--text-dim)',margin:'0.75rem 0'}}>
+              Measures how accessible and transparent this representative is to citizens.
+            </p>
+            {casFactors.length > 0 && (
+              <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+                {casFactors.map((f, i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0.75rem',background:'var(--navy)',borderRadius:8}}>
+                    <div style={{minWidth:50,textAlign:'center'}}>
+                      <div style={{fontSize:'1rem',fontWeight:700,color: f.score >= 70 ? 'var(--green)' : f.score >= 40 ? 'var(--amber)' : 'var(--red)'}}>{f.score}</div>
+                      <div style={{fontSize:'0.6rem',color:'var(--text-dim)'}}>/ 100</div>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:'0.85rem',fontWeight:600,color:'#fff'}}>{f.label} <span style={{fontWeight:400,color:'var(--text-dim)'}}>({f.weight})</span></div>
+                      <div style={{fontSize:'0.75rem',color:'var(--text-dim)'}}>{f.detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p style={{color:'var(--text-dim)'}}>Citizen Accessibility Score has not been calculated yet. Run the CAS calculation after data ingestion.</p>
+        )}
+      </div>
+
+      {/* Constitutional Fidelity Score v2 (AI-Driven) */}
+      {leg.cfs_v2_score != null && (
+        <div className="card" style={{marginBottom:'1.5rem'}}>
+          <div className="card-header"><span className="card-title">Constitutional Fidelity Score</span></div>
+          <div>
+            <div className="cfs-meter">
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'0.25rem'}}>
+                <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>0</span>
+                <span style={{fontSize:'1.2rem',fontWeight:800,color:'#fff'}}>{Math.round(leg.cfs_v2_score)}/100</span>
+                <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>100</span>
+              </div>
+              <div className="cfs-bar-bg">
+                <div className={`cfs-bar-fill ${cfsLevel(leg.cfs_v2_score)}`} style={{width: `${leg.cfs_v2_score}%`}}></div>
+              </div>
+            </div>
+            <p style={{fontSize:'0.8rem',color:'var(--text-dim)',margin:'0.75rem 0'}}>
+              AI-driven score measuring how well this representative's legislative actions align with constitutional rights.
+              Based on sponsored bills, voting record, and cosponsorship of constitutionally impactful legislation.
+            </p>
+            {leg.cfs_v2_details && (
+              <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{minWidth:50,textAlign:'center'}}>
+                    <div style={{fontSize:'1rem',fontWeight:700,color: leg.cfs_v2_details.sponsor_score >= 65 ? 'var(--green)' : leg.cfs_v2_details.sponsor_score >= 35 ? 'var(--amber)' : 'var(--red)'}}>{leg.cfs_v2_details.sponsor_score}</div>
+                    <div style={{fontSize:'0.6rem',color:'var(--text-dim)'}}>/ 100</div>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:'0.85rem',fontWeight:600,color:'#fff'}}>Sponsored Bills <span style={{fontWeight:400,color:'var(--text-dim)'}}>(40%)</span></div>
+                    <div style={{fontSize:'0.75rem',color:'var(--text-dim)'}}>{leg.cfs_v2_details.sponsor_bills_analyzed} bills analyzed against Bill of Rights</div>
+                  </div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{minWidth:50,textAlign:'center'}}>
+                    <div style={{fontSize:'1rem',fontWeight:700,color: leg.cfs_v2_details.vote_score >= 65 ? 'var(--green)' : leg.cfs_v2_details.vote_score >= 35 ? 'var(--amber)' : 'var(--red)'}}>{leg.cfs_v2_details.vote_score}</div>
+                    <div style={{fontSize:'0.6rem',color:'var(--text-dim)'}}>/ 100</div>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:'0.85rem',fontWeight:600,color:'#fff'}}>Voting Record <span style={{fontWeight:400,color:'var(--text-dim)'}}>(40%)</span></div>
+                    <div style={{fontSize:'0.75rem',color:'var(--text-dim)'}}>{leg.cfs_v2_details.constitutional_votes} constitutional votes analyzed</div>
+                  </div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{minWidth:50,textAlign:'center'}}>
+                    <div style={{fontSize:'1rem',fontWeight:700,color: leg.cfs_v2_details.cosponsor_score >= 65 ? 'var(--green)' : leg.cfs_v2_details.cosponsor_score >= 35 ? 'var(--amber)' : 'var(--red)'}}>{leg.cfs_v2_details.cosponsor_score}</div>
+                    <div style={{fontSize:'0.6rem',color:'var(--text-dim)'}}>/ 100</div>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:'0.85rem',fontWeight:600,color:'#fff'}}>Cosponsored Bills <span style={{fontWeight:400,color:'var(--text-dim)'}}>(20%)</span></div>
+                    <div style={{fontSize:'0.75rem',color:'var(--text-dim)'}}>{leg.cfs_v2_details.cosponsor_bills_analyzed} cosponsored bills analyzed</div>
+                  </div>
+                </div>
+                {leg.cfs_v2_details.top_amendments && leg.cfs_v2_details.top_amendments.length > 0 && (
+                  <div style={{padding:'0.5rem 0.75rem',background:'var(--navy)',borderRadius:8}}>
+                    <div style={{fontSize:'0.85rem',fontWeight:600,color:'#fff',marginBottom:'0.25rem'}}>Most Impacted Amendments</div>
+                    <div style={{display:'flex',gap:'0.3rem',flexWrap:'wrap'}}>
+                      {leg.cfs_v2_details.top_amendments.map(a => (
+                        <span key={a} className="subject-tag">{AMENDMENT_NAMES[a] || `${a}th Amendment`}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="detail-grid">
+        {/* Voting Stats */}
+        <div className="card">
+          <div className="card-header"><span className="card-title">Voting Record</span></div>
+          {voting_stats.total > 0 ? (
+            <div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'0.75rem'}}>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--green)'}}>{voting_stats.yea}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Yea</div>
+                </div>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--red)'}}>{voting_stats.nay}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Nay</div>
+                </div>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--amber)'}}>{voting_stats.present}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Present</div>
+                </div>
+                <div style={{textAlign:'center',padding:'0.75rem',background:'var(--navy)',borderRadius:8}}>
+                  <div style={{fontSize:'1.3rem',fontWeight:700,color:'var(--text-dim)'}}>{voting_stats.not_voting}</div>
+                  <div style={{fontSize:'0.7rem',color:'var(--text-dim)',textTransform:'uppercase'}}>Not Voting</div>
+                </div>
+              </div>
+              <div style={{textAlign:'center',marginTop:'0.75rem',fontSize:'0.85rem',color:'var(--text-dim)'}}>
+                Total: {voting_stats.total} votes | Participation: {Math.round(((voting_stats.total - voting_stats.not_voting) / voting_stats.total) * 100)}%
+              </div>
+            </div>
+          ) : (
+            <p style={{color:'var(--text-dim)'}}>No voting records available.</p>
+          )}
+        </div>
+
+        {/* Sponsored Bills */}
+        <div className="card">
+          <div className="card-header"><span className="card-title">Sponsored Bills ({sponsored_bills.length})</span></div>
+          {sponsored_bills.length === 0 ? (
+            <p style={{color:'var(--text-dim)'}}>No sponsored bills found.</p>
+          ) : (
+            <div style={{maxHeight:250, overflowY:'auto'}}>
+              {sponsored_bills.map(bill => (
+                <div key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })} style={{padding:'0.5rem 0', borderBottom:'1px solid var(--border)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                    <span className="bill-number">{bill.bill_number}</span>
+                    <StatusBadge status={bill.status} />
+                  </div>
+                  <div style={{fontSize:'0.8rem', color:'var(--text-dim)', marginTop:'0.1rem'}}>{bill.short_title || bill.title}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Votes */}
+      <div className="card" style={{marginTop:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Recent Votes</span></div>
+        {recent_votes.length === 0 ? (
+          <p style={{color:'var(--text-dim)'}}>No recent votes recorded.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Vote</th><th>Question</th><th>Bill</th><th>Position</th><th>Result</th></tr></thead>
+              <tbody>
+                {recent_votes.map((vr, i) => {
+                  const v = vr.vote || {};
+                  const bill = v.bill;
+                  return (
+                    <tr key={i}>
+                      <td style={{fontSize:'0.8rem',whiteSpace:'nowrap'}}>{v.vote_date}<br/><span style={{color:'var(--text-dim)'}}>#{v.vote_number}</span></td>
+                      <td style={{fontSize:'0.85rem'}}>{v.question}</td>
+                      <td>{bill ? <span className="clickable bill-number" onClick={(e) => { e.stopPropagation(); setView({ page: 'bill', id: bill.id }); }}>{bill.bill_number}</span> : '—'}</td>
+                      <td><VotePosition position={vr.position} /></td>
+                      <td style={{fontSize:'0.85rem'}}>{v.result}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ======= SEARCH RESULTS =======
+function SearchResults({ query, setView }) {
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api({ route: 'search', q: query }).then(d => { setResults(d); setLoading(false); });
+  }, [query]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+
+  const { legislators = [], bills = [] } = results || {};
+
+  return (
+    <div>
+      <button className="back-btn" onClick={() => setView({ page: 'dashboard' })}>\u2190 Back</button>
+      <h1 style={{fontSize:'1.3rem',fontWeight:700,color:'#fff',marginBottom:'1.5rem'}}>Search: "{query}"</h1>
+
+      {legislators.length > 0 && (
+        <div className="card" style={{marginBottom:'1.5rem'}}>
+          <div className="card-header"><span className="card-title">Representatives ({legislators.length})</span></div>
+          {legislators.map(leg => (
+            <div key={leg.id} className="clickable" onClick={() => setView({ page: 'legislator', id: leg.id })} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0',borderBottom:'1px solid var(--border)'}}>
+              <CfsBadge score={leg.cfs_score} small />
+              <PartyBadge party={leg.party} />
+              <span style={{fontWeight:500,color:'#fff'}}>{leg.full_name}</span>
+              <span style={{color:'var(--text-dim)',fontSize:'0.8rem',marginLeft:'auto'}}>{leg.state_code} \u00b7 {leg.chamber}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {bills.length > 0 && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">Bills ({bills.length})</span></div>
+          {bills.map(bill => (
+            <div key={bill.id} className="clickable" onClick={() => setView({ page: 'bill', id: bill.id })} style={{padding:'0.5rem 0',borderBottom:'1px solid var(--border)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                <span className="bill-number">{bill.bill_number}</span>
+                <StatusBadge status={bill.status} />
+              </div>
+              <div style={{fontSize:'0.85rem',color:'var(--text-dim)',marginTop:'0.2rem'}}>{bill.short_title || bill.title}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {legislators.length === 0 && bills.length === 0 && (
+        <div className="card" style={{textAlign:'center',padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)'}}>No results found for "{query}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= WATCHLIST PAGE =======
+function WatchlistPage({ setView, user }) {
+  const [watchlist, setWatchlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    api({ route: 'watchlist', user_id: user.id }).then(d => {
+      setWatchlist(d.watchlist || []);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const removeItem = async (id) => {
+    await apiPost({ route: 'watchlist' }, { user_id: user.id, action: 'remove', watchlist_id: id });
+    setWatchlist(prev => prev.filter(w => w.id !== id));
+  };
+
+  if (!user) return <div className="card" style={{textAlign:'center',padding:'3rem'}}><p style={{color:'var(--text-dim)'}}>Sign in to use your watchlist.</p></div>;
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+
+  const bills = watchlist.filter(w => w.item_type === 'bill' && w.bill);
+  const legislators = watchlist.filter(w => w.item_type === 'legislator' && w.legislator);
+
+  return (
+    <div>
+      <h1 style={{fontSize:'1.5rem', fontWeight:800, color:'#fff', marginBottom:'1.5rem'}}>My Watchlist</h1>
+
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Watched Bills ({bills.length})</span></div>
+        {bills.length === 0 ? (
+          <p style={{color:'var(--text-dim)'}}>No bills watched yet. Browse bills and click the bookmark icon to add them.</p>
+        ) : bills.map(w => (
+          <div key={w.id} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0',borderBottom:'1px solid var(--border)'}}>
+            <CfsBadge score={w.bill.freedom_score} small />
+            <div className="clickable" style={{flex:1}} onClick={() => setView({ page: 'bill', id: w.bill.id })}>
+              <span className="bill-number">{w.bill.bill_number}</span>
+              <span style={{color:'var(--text-dim)',fontSize:'0.85rem',marginLeft:'0.5rem'}}>{w.bill.short_title || w.bill.title}</span>
+            </div>
+            <button className="watchlist-btn active" onClick={() => removeItem(w.id)}>Remove</button>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">Watched Representatives ({legislators.length})</span></div>
+        {legislators.length === 0 ? (
+          <p style={{color:'var(--text-dim)'}}>No representatives watched yet. Browse representatives and click the bookmark icon.</p>
+        ) : legislators.map(w => (
+          <div key={w.id} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.5rem 0',borderBottom:'1px solid var(--border)'}}>
+            <CfsBadge score={w.legislator.cfs_score} small />
+            <PartyBadge party={w.legislator.party} />
+            <div className="clickable" style={{flex:1}} onClick={() => setView({ page: 'legislator', id: w.legislator.id })}>
+              <span style={{fontWeight:500,color:'#fff'}}>{w.legislator.full_name}</span>
+              <span style={{color:'var(--text-dim)',fontSize:'0.8rem',marginLeft:'0.5rem'}}>{w.legislator.state_code}</span>
+            </div>
+            <button className="watchlist-btn active" onClick={() => removeItem(w.id)}>Remove</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ======= NOTIFICATIONS =======
+const NOTIF_ENGINE_URL = 'https://vsocmojximnnlrzdmeoz.supabase.co/functions/v1/notification-engine';
+
+function NotificationBell({ user, setView }) {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`${NOTIF_ENGINE_URL}?user_id=${user.id}&unread=false`, {
+      headers: { 'Authorization': `Bearer ${ANON_KEY}` },
+    })
+    .then(r => r.json())
+    .then(d => {
+      const notifs = d.notifications || [];
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.read_at).length);
+    })
+    .catch(() => {});
+  }, [user]);
+
+  const markRead = async (id) => {
+    await fetch(`${NOTIF_ENGINE_URL}?action=mark-read`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+      body: JSON.stringify({ notification_id: id, user_id: user.id }),
+    });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  };
+
+  const markAllRead = async () => {
+    await fetch(`${NOTIF_ENGINE_URL}?action=mark-all-read`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+      body: JSON.stringify({ user_id: user.id }),
+    });
+    setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
+    setUnreadCount(0);
+  };
+
+  const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
+  if (!user) return null;
+
+  return (
+    <div style={{position:'relative'}}>
+      <button className="notif-bell" onClick={() => setOpen(!open)}>
+        \uD83D\uDD14
+        {unreadCount > 0 && <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+      </button>
+      {open && (
+        <>
+          <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:140}} onClick={() => setOpen(false)}></div>
+          <div className="notif-panel">
+            <div className="notif-panel-header">
+              <span>Notifications</span>
+              <div style={{display:'flex',gap:'0.5rem'}}>
+                {unreadCount > 0 && <button style={{background:'none',border:'none',color:'var(--blue)',fontSize:'0.75rem',cursor:'pointer',fontFamily:'inherit'}} onClick={markAllRead}>Mark all read</button>}
+                <button style={{background:'none',border:'none',color:'var(--text-dim)',fontSize:'0.75rem',cursor:'pointer',fontFamily:'inherit'}} onClick={() => { setOpen(false); setView({ page: 'notifications' }); }}>Settings</button>
+              </div>
+            </div>
+            <div className="notif-list">
+              {notifications.length === 0 ? (
+                <div className="notif-empty">No notifications yet. Watch bills and representatives to get updates.</div>
+              ) : notifications.slice(0, 20).map(n => (
+                <div key={n.id} className={`notif-item ${!n.read_at ? 'unread' : ''}`} onClick={() => {
+                  if (!n.read_at) markRead(n.id);
+                  if (n.data?.bill_id) { setOpen(false); setView({ page: 'bill', id: n.data.bill_id }); }
+                }}>
+                  <div className="notif-item-title">{n.title}</div>
+                  <div className="notif-item-body">{n.body}</div>
+                  <div className="notif-item-time">{timeAgo(n.created_at)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NotificationPrefsPage({ user }) {
+  const [prefs, setPrefs] = useState({ bill_updates: true, score_changes: true, weekly_digest: true, topics: [] });
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [topicInput, setTopicInput] = useState('');
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    api({ route: 'notification-prefs', user_id: user.id }).then(d => {
+      if (d.preferences) setPrefs(d.preferences);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const savePrefs = async () => {
+    await apiPost({ route: 'notification-prefs' }, { user_id: user.id, ...prefs });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const addTopic = () => {
+    const t = topicInput.trim();
+    if (t && !prefs.topics.includes(t)) {
+      setPrefs(prev => ({ ...prev, topics: [...prev.topics, t] }));
+      setTopicInput('');
+    }
+  };
+
+  const removeTopic = (t) => {
+    setPrefs(prev => ({ ...prev, topics: prev.topics.filter(x => x !== t) }));
+  };
+
+  const togglePref = (key) => {
+    setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  if (!user) return <div className="card" style={{textAlign:'center',padding:'3rem'}}><p style={{color:'var(--text-dim)'}}>Sign in to manage notification preferences.</p></div>;
+  if (loading) return <div className="loading"><div className="spinner"></div></div>;
+
+  return (
+    <div>
+      <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#fff',marginBottom:'1.5rem'}}>Notification Settings</h1>
+
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Alert Types</span></div>
+
+        <div className="toggle-row">
+          <div>
+            <div className="toggle-label">Bill Updates</div>
+            <div className="toggle-desc">Get notified when watched bills have new actions</div>
+          </div>
+          <div className={`toggle-switch ${prefs.bill_updates ? 'on' : ''}`} onClick={() => togglePref('bill_updates')}></div>
+        </div>
+
+        <div className="toggle-row">
+          <div>
+            <div className="toggle-label">Score Changes</div>
+            <div className="toggle-desc">Alerts when CAS or CFS scores change for watched representatives</div>
+          </div>
+          <div className={`toggle-switch ${prefs.score_changes ? 'on' : ''}`} onClick={() => togglePref('score_changes')}></div>
+        </div>
+
+        <div className="toggle-row" style={{borderBottom:'none'}}>
+          <div>
+            <div className="toggle-label">Weekly Digest</div>
+            <div className="toggle-desc">Summary of legislative activity each week</div>
+          </div>
+          <div className={`toggle-switch ${prefs.weekly_digest ? 'on' : ''}`} onClick={() => togglePref('weekly_digest')}></div>
+        </div>
+      </div>
+
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Topic Alerts</span></div>
+        <p style={{color:'var(--text-dim)',fontSize:'0.85rem',marginBottom:'1rem'}}>
+          Get notified when new bills match your interests. Add topics below.
+        </p>
+        <div style={{display:'flex',gap:'0.5rem',marginBottom:'1rem'}}>
+          <input
+            className="auth-input"
+            style={{flex:1}}
+            placeholder="e.g. Healthcare, Education, Firearms..."
+            value={topicInput}
+            onChange={e => setTopicInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addTopic(); }}
+          />
+          <button className="auth-btn" style={{padding:'0.5rem 1rem'}} onClick={addTopic}>Add</button>
+        </div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:'0.3rem'}}>
+          {prefs.topics.map(t => (
+            <span key={t} className="interest-chip selected" onClick={() => removeTopic(t)}>
+              {t} \u00d7
+            </span>
+          ))}
+          {prefs.topics.length === 0 && <span style={{color:'var(--text-dim)',fontSize:'0.85rem'}}>No topics added yet</span>}
+        </div>
+      </div>
+
+      <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
+        <button className="auth-btn" onClick={savePrefs}>Save Preferences</button>
+        {saved && <span style={{color:'var(--green)',fontSize:'0.85rem'}}>Preferences saved!</span>}
+      </div>
+    </div>
+  );
+}
+
+// ======= BILL OF RIGHTS SPECTRUM =======
+const AMENDMENT_NAMES = {
+  1: '1st — Speech, Religion, Press',
+  2: '2nd — Bear Arms',
+  3: '3rd — No Quartering',
+  4: '4th — Search & Seizure',
+  5: '5th — Due Process',
+  6: '6th — Fair Trial',
+  7: '7th — Jury Trial',
+  8: '8th — Cruel Punishment',
+  9: '9th — Unenumerated Rights',
+  10: '10th — States\' Rights',
+};
+
+function CfsV2Badge({ score }) {
+  if (score == null) return null;
+  const level = score >= 65 ? 'high' : score >= 35 ? 'mid' : 'low';
+  return <span className={`cfs-v2-badge ${level}`}>CFS {score}</span>;
+}
+
+function SpectrumPage({ setView }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedAmendment, setSelectedAmendment] = useState(null);
+  const [hoveredBill, setHoveredBill] = useState(null);
+
+  useEffect(() => {
+    const params = { route: 'spectrum' };
+    if (selectedAmendment) params.amendment = selectedAmendment;
+    api(params).then(d => { setData(d); setLoading(false); });
+  }, [selectedAmendment]);
+
+  if (loading) return <div className="loading"><div className="spinner"></div><p style={{marginTop:'1rem'}}>Loading spectrum data...</p></div>;
+
+  if (!data || !data.bills || data.bills.length === 0) {
+    return (
+      <div>
+        <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#fff',marginBottom:'0.5rem'}}>Bill of Rights Spectrum</h1>
+        <div className="card" style={{textAlign:'center',padding:'3rem'}}>
+          <p style={{color:'var(--text-dim)',fontSize:'1rem',marginBottom:'0.5rem'}}>No spectrum data available yet.</p>
+          <p style={{color:'var(--text-dim)',fontSize:'0.85rem'}}>Run the Bill Spectrum analysis from the admin panel to analyze bills against the Bill of Rights.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { bills, summary, amendment_breakdown } = data;
+
+  return (
+    <div>
+      <div style={{marginBottom:'1.5rem'}}>
+        <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#fff',marginBottom:'0.25rem'}}>Bill of Rights Spectrum</h1>
+        <p style={{color:'var(--text-dim)',fontSize:'0.9rem',maxWidth:'700px'}}>
+          See how current legislation impacts your constitutional rights. Each bill is analyzed by AI
+          and placed on a spectrum. The center (0) represents no Bill of Rights infringement, while both
+          extremes represent expanded government control — left-leaning or right-leaning.
+        </p>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="stats-grid" style={{gridTemplateColumns:'repeat(3, 1fr)'}}>
+        <div className="card stat-card">
+          <div className="stat-value" style={{color:'#ef4444'}}>{summary.restricting}</div>
+          <div className="stat-label">Gov Expansion (Left)</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value" style={{color:'#10b981'}}>{summary.neutral}</div>
+          <div className="stat-label">No BoR Infringement</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-value" style={{color:'#ef4444'}}>{summary.expanding}</div>
+          <div className="stat-label">Gov Expansion (Right)</div>
+        </div>
+      </div>
+
+      {/* Amendment Filter */}
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Filter by Amendment</span></div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:'0.25rem'}}>
+          <button
+            className={`amendment-chip ${!selectedAmendment ? 'active' : ''}`}
+            onClick={() => { setSelectedAmendment(null); setLoading(true); }}
+          >All</button>
+          {Object.entries(AMENDMENT_NAMES).map(([num, name]) => (
+            <button
+              key={num}
+              className={`amendment-chip ${selectedAmendment == num ? 'active' : ''}`}
+              onClick={() => { setSelectedAmendment(num); setLoading(true); }}
+            >{name.split(' — ')[0]}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Spectrum Visualization */}
+      <div className="card" style={{marginBottom:'1.5rem',overflow:'visible'}}>
+        <div className="card-header"><span className="card-title">Constitutional Impact Spectrum</span></div>
+        <div className="spectrum-bar">
+          {bills.map((b, i) => {
+            const pct = ((b.position + 100) / 200) * 100;
+            const bill = b.bill || {};
+            return (
+              <div
+                key={b.id || i}
+                className="spectrum-dot"
+                style={{left: `${pct}%`}}
+                onClick={() => bill.id && setView({ page: 'bill', id: bill.id })}
+              >
+                <div className="spectrum-tooltip">
+                  <div style={{fontWeight:600,color:'#fff'}}>{bill.bill_number || 'Unknown'}</div>
+                  <div style={{maxWidth:'200px',overflow:'hidden',textOverflow:'ellipsis'}}>{bill.short_title || bill.title || ''}</div>
+                  <div style={{color: Math.abs(b.position) <= 20 ? '#34d399' : Math.abs(b.position) <= 50 ? '#fbbf24' : '#f87171'}}>
+                    Score: {b.position > 0 ? '+' : ''}{b.position} {Math.abs(b.position) <= 20 ? '(Minimal impact)' : b.position < 0 ? '(Left-leaning)' : '(Right-leaning)'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="spectrum-labels">
+          <span>Expands Gov Control — Left (-100)</span>
+          <span>No BoR Infringement (0)</span>
+          <span>Expands Gov Control — Right (+100)</span>
+        </div>
+      </div>
+
+      {/* Amendment Breakdown */}
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div className="card-header"><span className="card-title">Amendment Impact Breakdown</span></div>
+        {Object.entries(amendment_breakdown).map(([num, counts]) => {
+          const total = counts.expanding + counts.restricting + counts.neutral;
+          if (total === 0) return null;
+          const ePct = (counts.expanding / total) * 100;
+          const nPct = (counts.neutral / total) * 100;
+          const rPct = (counts.restricting / total) * 100;
+          return (
+            <div className="amendment-bar-row" key={num}>
+              <span className="amendment-bar-label">{AMENDMENT_NAMES[num]?.split(' — ')[0] || `${num}th`}</span>
+              <div className="amendment-bar-track">
+                {rPct > 0 && <div className="amendment-bar-seg" style={{width:`${rPct}%`,background:'#ef4444'}}></div>}
+                {nPct > 0 && <div className="amendment-bar-seg" style={{width:`${nPct}%`,background:'#10b981'}}></div>}
+                {ePct > 0 && <div className="amendment-bar-seg" style={{width:`${ePct}%`,background:'#f59e0b'}}></div>}
+              </div>
+              <span style={{fontSize:'0.75rem',color:'var(--text-dim)',width:'40px',textAlign:'right'}}>{total}</span>
+            </div>
+          );
+        })}
+        <div style={{display:'flex',gap:'1rem',marginTop:'0.75rem',fontSize:'0.75rem'}}>
+          <span style={{display:'flex',alignItems:'center',gap:'0.3rem'}}><span style={{width:10,height:10,borderRadius:2,background:'#ef4444',display:'inline-block'}}></span> Gov Expansion (Left)</span>
+          <span style={{display:'flex',alignItems:'center',gap:'0.3rem'}}><span style={{width:10,height:10,borderRadius:2,background:'#10b981',display:'inline-block'}}></span> No Infringement</span>
+          <span style={{display:'flex',alignItems:'center',gap:'0.3rem'}}><span style={{width:10,height:10,borderRadius:2,background:'#f59e0b',display:'inline-block'}}></span> Gov Expansion (Right)</span>
+        </div>
+      </div>
+
+      {/* Bills List */}
+      <div className="card">
+        <div className="card-header"><span className="card-title">Analyzed Bills ({bills.length})</span></div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Score</th>
+                <th>Bill</th>
+                <th>Title</th>
+                <th>Amendments</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bills.map((b, i) => {
+                const bill = b.bill || {};
+                const absPos = Math.abs(b.position);
+                const color = absPos <= 20 ? '#34d399' : absPos <= 50 ? '#fbbf24' : '#f87171';
+                return (
+                  <tr key={b.id || i} className="clickable" onClick={() => bill.id && setView({ page: 'bill', id: bill.id })}>
+                    <td style={{fontWeight:700,color,fontSize:'1rem'}}>{b.position > 0 ? '+' : ''}{b.position}</td>
+                    <td><span className="bill-number">{bill.bill_number}</span></td>
+                    <td style={{maxWidth:'300px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{bill.short_title || bill.title}</td>
+                    <td>{(b.affected_amendments || []).map(a => <span key={a} className="subject-tag" style={{margin:'0.1rem'}}>{a}{a===1?'st':a===2?'nd':a===3?'rd':'th'}</span>)}</td>
+                    <td style={{color:'var(--text-dim)',fontSize:'0.85rem'}}>{b.confidence}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="scanner-disclaimer" style={{marginTop:'1.5rem'}}>
+        <strong>Disclaimer:</strong> Scores are generated by AI analysis of bill titles, subjects, and available metadata.
+        The spectrum measures potential government expansion of control, with the center representing no Bill of Rights infringement.
+        Left/right designations reflect the political direction of government expansion, not partisan endorsement.
+        The AI cannot read full bill text and may not capture all nuances. This is a civic education tool, not legal analysis.
+      </div>
+    </div>
+  );
+}
+
+// ======= PSYOP SCANNER =======
+const SCANNER_URL = 'https://vsocmojximnnlrzdmeoz.supabase.co/functions/v1/psyop-scanner';
+const INDICATOR_LABELS = {
+  emotional_priming: { name: 'Emotional Priming', icon: '\u2764\uFE0F', desc: 'Language designed to trigger fear, anger, or outrage before presenting facts' },
+  coordinated_repetition: { name: 'Coordinated Repetition', icon: '\uD83D\uDD01', desc: 'Identical talking points repeated across multiple sources or channels' },
+  simplified_binaries: { name: 'Simplified Binaries', icon: '\u2696\uFE0F', desc: 'Complex issues reduced to us-vs-them or good-vs-evil framing' },
+  anonymous_sourcing: { name: 'Anonymous Sourcing', icon: '\uD83D\uDC64', desc: 'Claims attributed to unnamed sources or vague authority figures' },
+  selective_omission: { name: 'Selective Omission', icon: '\u2702\uFE0F', desc: 'Key context or counterarguments deliberately left out' },
+  astroturfing: { name: 'Astroturfing Signals', icon: '\uD83C\uDF3F', desc: 'Manufactured grassroots support or artificially amplified voices' },
+  behavioral_nudges: { name: 'Behavioral Nudges', icon: '\uD83E\uDDE0', desc: 'Subtle pushes toward a specific action or conclusion' },
+};
+
+function scannerColor(score) {
+  if (score == null) return 'green';
+  if (score >= 70) return 'red';
+  if (score >= 40) return 'yellow';
+  return 'green';
+}
+
+function PsyOpScanner({ user }) {
+  const [inputText, setInputText] = useState('');
+  const [inputUrl, setInputUrl] = useState('');
+  const [inputMode, setInputMode] = useState('text'); // 'text' or 'url'
+  const [scanning, setScanning] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  const runScan = async () => {
+    const content = inputMode === 'text' ? inputText.trim() : inputUrl.trim();
+    if (!content) return;
+    setScanning(true);
+    setError(null);
+    setResult(null);
+    setFeedback(null);
+    try {
+      const body = {
+        input_type: inputMode,
+        ...(inputMode === 'text' ? { input_text: content } : { input_url: content }),
+      };
+      if (user) body.user_id = user.id;
+      const res = await fetch(SCANNER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResult(data);
+      setHistory(prev => [{ ...data, scanned_at: new Date().toISOString(), input_preview: content.slice(0, 80) }, ...prev].slice(0, 10));
+    } catch (e) {
+      setError(e.message || 'Scan failed. Please try again.');
+    }
+    setScanning(false);
+  };
+
+  const indicators = result ? [
+    { key: 'emotional_priming', score: result.emotional_priming_score, color: result.emotional_priming_color, explanation: result.indicator_details?.emotional_priming },
+    { key: 'coordinated_repetition', score: result.coordinated_repetition_score, color: result.coordinated_repetition_color, explanation: result.indicator_details?.coordinated_repetition },
+    { key: 'simplified_binaries', score: result.simplified_binaries_score, color: result.simplified_binaries_color, explanation: result.indicator_details?.simplified_binaries },
+    { key: 'anonymous_sourcing', score: result.anonymous_sourcing_score, color: result.anonymous_sourcing_color, explanation: result.indicator_details?.anonymous_sourcing },
+    { key: 'selective_omission', score: result.selective_omission_score, color: result.selective_omission_color, explanation: result.indicator_details?.selective_omission },
+    { key: 'astroturfing', score: result.astroturfing_score, color: result.astroturfing_color, explanation: result.indicator_details?.astroturfing },
+    { key: 'behavioral_nudges', score: result.behavioral_nudges_score, color: result.behavioral_nudges_color, explanation: result.indicator_details?.behavioral_nudges },
+  ] : [];
+
+  return (
+    <div>
+      <div style={{marginBottom:'2rem'}}>
+        <h1 style={{fontSize:'1.5rem',fontWeight:800,color:'#fff',marginBottom:'0.25rem',display:'flex',alignItems:'center',gap:'0.5rem'}}>
+          PsyOp Scanner
+        </h1>
+        <p style={{color:'var(--text-dim)',fontSize:'0.9rem',maxWidth:'700px'}}>
+          Analyze news articles, social media posts, or political messaging for manipulation tactics.
+          Our AI examines 7 key indicators of psychological manipulation.
+        </p>
+      </div>
+
+      {/* Input Section */}
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div style={{display:'flex',gap:'0.5rem',marginBottom:'1rem'}}>
+          <button
+            className={`nav-btn ${inputMode === 'text' ? 'active' : ''}`}
+            onClick={() => setInputMode('text')}
+            style={{fontSize:'0.85rem'}}
+          >Paste Text</button>
+          <button
+            className={`nav-btn ${inputMode === 'url' ? 'active' : ''}`}
+            onClick={() => setInputMode('url')}
+            style={{fontSize:'0.85rem'}}
+          >Enter URL</button>
+        </div>
+
+        {inputMode === 'text' ? (
+          <textarea
+            className="scanner-input-area"
+            placeholder="Paste a news article, social media post, political speech, or any text you want to analyze for manipulation tactics..."
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+          />
+        ) : (
+          <input
+            className="auth-input"
+            style={{width:'100%',marginBottom:'0.5rem'}}
+            placeholder="https://example.com/article..."
+            value={inputUrl}
+            onChange={e => setInputUrl(e.target.value)}
+          />
+        )}
+
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:'1rem'}}>
+          <button
+            className="scan-btn"
+            disabled={scanning || (inputMode === 'text' ? !inputText.trim() : !inputUrl.trim())}
+            onClick={runScan}
+          >
+            {scanning ? (<><div className="spinner" style={{width:18,height:18,borderWidth:2}}></div> Analyzing...</>) : (<>Scan for Manipulation</>)}
+          </button>
+          {inputMode === 'text' && inputText.length > 0 && (
+            <span style={{fontSize:'0.8rem',color:'var(--text-dim)'}}>{inputText.length.toLocaleString()} chars {inputText.length > 4000 && '(will be truncated to 4,000)'}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="card" style={{borderColor:'rgba(239,68,68,0.3)',marginBottom:'1.5rem'}}>
+          <p style={{color:'#f87171'}}>Error: {error}</p>
+        </div>
+      )}
+
+      {/* Results */}
+      {result && (
+        <div>
+          {/* Overall Score Header */}
+          <div className="card" style={{marginBottom:'1.5rem'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'2rem',flexWrap:'wrap'}}>
+              <div className={`overall-score-ring ${scannerColor(result.overall_score)}`}>
+                {result.overall_score}
+                <span className="overall-score-label" style={{color: result.overall_score >= 70 ? '#f87171' : result.overall_score >= 40 ? '#fbbf24' : '#34d399'}}>
+                  {result.overall_score >= 70 ? 'High Risk' : result.overall_score >= 40 ? 'Moderate' : 'Low Risk'}
+                </span>
+              </div>
+              <div style={{flex:1,minWidth:'200px'}}>
+                <h2 style={{color:'#fff',fontSize:'1.2rem',fontWeight:700,marginBottom:'0.5rem'}}>
+                  {result.overall_score >= 70 ? 'Significant Manipulation Detected' : result.overall_score >= 40 ? 'Some Manipulation Indicators Found' : 'Low Manipulation Risk'}
+                </h2>
+                <p style={{color:'var(--text-dim)',fontSize:'0.9rem',lineHeight:1.6}}>{result.analysis_summary}</p>
+                {result.confidence && (
+                  <span style={{display:'inline-block',marginTop:'0.5rem',fontSize:'0.75rem',color:'var(--text-dim)',background:'var(--navy)',padding:'0.2rem 0.6rem',borderRadius:12}}>
+                    AI Confidence: {result.confidence}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Indicator Cards */}
+          <h3 style={{color:'#fff',fontSize:'1rem',fontWeight:700,marginBottom:'1rem'}}>Indicator Breakdown</h3>
+          <div className="indicator-grid">
+            {indicators.map(ind => {
+              const meta = INDICATOR_LABELS[ind.key];
+              const color = ind.color || scannerColor(ind.score);
+              return (
+                <div className="indicator-card" key={ind.key}>
+                  <div className="indicator-header">
+                    <span className="indicator-name">{meta.icon} {meta.name}</span>
+                    <span className={`indicator-score-badge ${color}`}>{ind.score}</span>
+                  </div>
+                  <div className="indicator-bar-bg">
+                    <div className={`indicator-bar-fill ${color}`} style={{width: `${Math.min(ind.score, 100)}%`}}></div>
+                  </div>
+                  <p className="indicator-explanation">{ind.explanation || meta.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Feedback */}
+          <div className="card" style={{marginTop:'1.5rem'}}>
+            <p style={{color:'var(--text-dim)',fontSize:'0.85rem',marginBottom:'0.5rem'}}>Was this analysis accurate?</p>
+            <div className="feedback-btns">
+              <button className={`feedback-btn ${feedback === 'accurate' ? 'selected' : ''}`} onClick={() => setFeedback('accurate')}>
+                Yes, accurate
+              </button>
+              <button className={`feedback-btn ${feedback === 'too_high' ? 'selected' : ''}`} onClick={() => setFeedback('too_high')}>
+                Scores too high
+              </button>
+              <button className={`feedback-btn ${feedback === 'too_low' ? 'selected' : ''}`} onClick={() => setFeedback('too_low')}>
+                Scores too low
+              </button>
+              <button className={`feedback-btn ${feedback === 'missed' ? 'selected' : ''}`} onClick={() => setFeedback('missed')}>
+                Missed something
+              </button>
+            </div>
+            {feedback && <p style={{color:'var(--green)',fontSize:'0.8rem',marginTop:'0.5rem'}}>Thanks for your feedback!</p>}
+          </div>
+
+          {/* Disclaimer */}
+          <div className="scanner-disclaimer">
+            <strong>Disclaimer:</strong> This analysis is generated by AI and is intended as a critical thinking aid, not a definitive judgment.
+            No automated tool can perfectly detect manipulation. Scores reflect potential indicators based on textual patterns
+            and should be considered alongside your own judgment, additional research, and diverse information sources.
+            GlassPalace does not make claims about the intent of any content author. False positives and false negatives are possible.
+          </div>
+        </div>
+      )}
+
+      {/* Scan History */}
+      {history.length > 0 && !result && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">Recent Scans</span></div>
+          {history.map((h, i) => (
+            <div key={i} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.6rem 0',borderBottom:'1px solid var(--border)',cursor:'pointer'}} onClick={() => setResult(h)}>
+              <div className={`indicator-score-badge ${scannerColor(h.overall_score)}`}>{h.overall_score}</div>
+              <div style={{flex:1}}>
+                <p style={{fontSize:'0.85rem',color:'#fff'}}>{h.input_preview}...</p>
+                <p style={{fontSize:'0.7rem',color:'var(--text-dim)'}}>{new Date(h.scanned_at).toLocaleTimeString()}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Real-Time Narrative Intelligence Feed */}
+      <PsyOpFeed />
+    </div>
+  );
+}
+
+// ======= PSYOP FEED (Topic-Paired Narrative Intelligence) =======
+function PsyOpFeed() {
+  const [topics, setTopics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [lastGenerated, setLastGenerated] = useState(null);
+  const [expandedRow, setExpandedRow] = useState(null);
+
+  const loadFeed = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}?route=psyop-feed`, {
+        headers: { 'apikey': ANON_KEY }
+      });
+      const data = await res.json();
+      if (!data.error) {
+        setTopics(data.topics || []);
+        setLastGenerated(data.last_generated);
+      }
+    } catch (e) {
+      console.error('Feed load error:', e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadFeed(); }, []);
+
+  const scoreClass = (score) => score >= 60 ? 'high' : score >= 30 ? 'moderate' : 'low';
+  const scoreLabel = (score) => score >= 60 ? 'High Risk' : score >= 30 ? 'Moderate' : 'Low Risk';
+
+  const indicatorShort = (key) => ({
+    emotional_priming: 'Emotional', coordinated_repetition: 'Repetition',
+    simplified_binaries: 'Binary', anonymous_sourcing: 'Anon Sources',
+    selective_omission: 'Omission', astroturfing: 'Astroturfing', behavioral_nudges: 'Nudges',
+  })[key] || key;
+
+  const timeAgo = (d) => {
+    if (!d) return '';
+    const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+  };
+
+  const blackoutCount = topics.filter(t => t.left_blackout || t.right_blackout).length;
+  const highRiskCount = topics.filter(t => t.psyop_score >= 60).length;
+
+  if (loading && topics.length === 0) {
+    return (
+      <div className="feed-section">
+        <div className="feed-section-title">Narrative Intelligence Feed</div>
+        <div className="feed-loading">
+          <div className="spinner" style={{width:28,height:28,borderWidth:3,marginBottom:'0.75rem'}}></div>
+          Loading narrative feed...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="feed-section">
+      <div className="feed-section-header">
+        <div>
+          <div className="feed-section-title">
+            <span className="feed-live-dot"></span>
+            Narrative Intelligence Feed
+          </div>
+          <p style={{color:'var(--text-dim)',fontSize:'0.82rem',marginTop:'0.25rem',maxWidth:'650px'}}>
+            See the same topic through left and right lenses. "Topic Blackout" flags stories one side isn't showing you — breaking through algorithmic siloing.
+          </p>
+        </div>
+        <div style={{textAlign:'right'}}>
+          {lastGenerated && <div className="feed-timestamp">Updated: {timeAgo(lastGenerated)}</div>}
+          {topics.length === 0 && (
+            <p style={{color:'var(--amber)',fontSize:'0.8rem'}}>Run "Refresh PsyOp Feed" from admin panel</p>
+          )}
+        </div>
+      </div>
+
+      {topics.length > 0 && (
+        <div className="feed-stats">
+          <div className="feed-stat"><span className="feed-stat-value">{topics.length}</span> Topics</div>
+          {blackoutCount > 0 && (
+            <div className="feed-stat" style={{color:'#fbbf24'}}>
+              <span className="feed-stat-value" style={{color:'#fbbf24'}}>{blackoutCount}</span> Blackouts Detected
+            </div>
+          )}
+          {highRiskCount > 0 && (
+            <div className="feed-stat" style={{color:'#f87171'}}>
+              <span className="feed-stat-value" style={{color:'#f87171'}}>{highRiskCount}</span> High PsyOp Risk
+            </div>
+          )}
+        </div>
+      )}
+
+      {topics.length > 0 ? (
+        <div>
+          {/* Table Header */}
+          <div className="feed-table-header">
+            <div className="feed-th left">Left Perspective</div>
+            <div className="feed-th right">Right Perspective</div>
+            <div className="feed-th psyop">PsyOp Score</div>
+          </div>
+
+          {/* Topic Rows */}
+          {topics.map((t, i) => {
+            const expanded = expandedRow === i;
+            return (
+              <React.Fragment key={t.id || i}>
+                <div className="feed-topic-label" onClick={() => setExpandedRow(expanded ? null : i)} style={{cursor:'pointer'}}>
+                  <span>{t.topic}</span>
+                  {(t.left_blackout || t.right_blackout) && (
+                    <span style={{fontSize:'0.7rem',background:'rgba(245,158,11,0.15)',color:'#fbbf24',padding:'0.1rem 0.5rem',borderRadius:10,fontWeight:600}}>
+                      BLACKOUT
+                    </span>
+                  )}
+                  <span style={{marginLeft:'auto',fontSize:'0.75rem',color:'var(--text-dim)'}}>{expanded ? '\u25B2' : '\u25BC'}</span>
+                </div>
+                <div className="feed-row" onClick={() => setExpandedRow(expanded ? null : i)}>
+                  {/* LEFT */}
+                  <div className={`feed-cell left-cell`}>
+                    {t.left_blackout ? (
+                      <div className="feed-blackout">
+                        <div className="feed-blackout-badge">TOPIC BLACKOUT</div>
+                        <div className="feed-blackout-sub">Not covered by left-leaning outlets</div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="feed-headline">{t.left_headline}</div>
+                        {expanded && <div className="feed-summary">{t.left_summary}</div>}
+                        <div className="feed-sources">{t.left_sources}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* RIGHT */}
+                  <div className={`feed-cell right-cell`}>
+                    {t.right_blackout ? (
+                      <div className="feed-blackout">
+                        <div className="feed-blackout-badge">TOPIC BLACKOUT</div>
+                        <div className="feed-blackout-sub">Not covered by right-leaning outlets</div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="feed-headline">{t.right_headline}</div>
+                        {expanded && <div className="feed-summary">{t.right_summary}</div>}
+                        <div className="feed-sources">{t.right_sources}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* PSYOP */}
+                  <div className="feed-cell psyop-cell">
+                    <div className={`feed-psyop-score ${scoreClass(t.psyop_score)}`}>{t.psyop_score}</div>
+                    <div className={`feed-psyop-label ${scoreClass(t.psyop_score)}`}>{scoreLabel(t.psyop_score)}</div>
+                    {(t.psyop_indicators || []).slice(0, 3).map(ind => (
+                      <span className="feed-indicator-tag" key={ind}>{indicatorShort(ind)}</span>
+                    ))}
+                    {expanded && t.psyop_analysis && (
+                      <div className="feed-psyop-detail">{t.psyop_analysis}</div>
+                    )}
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="card" style={{textAlign:'center',padding:'2.5rem'}}>
+          <p style={{fontSize:'1.1rem',color:'#fff',marginBottom:'0.5rem'}}>Feed Not Yet Generated</p>
+          <p style={{color:'var(--text-dim)',fontSize:'0.9rem'}}>
+            Run "Refresh PsyOp Feed" from the admin panel. The feed pulls real headlines from RSS and social media, then uses AI to show how both sides frame each topic.
+          </p>
+        </div>
+      )}
+
+      <div className="scanner-disclaimer" style={{marginTop:'1.5rem'}}>
+        <strong>Disclaimer:</strong> The Narrative Intelligence Feed uses AI to compare how left- and right-leaning outlets frame the same topics.
+        "Topic Blackout" indicates a story appears absent from one side's major outlets based on available RSS and social media data — not that it's being intentionally suppressed.
+        PsyOp scores reflect potential manipulation indicators, not definitive judgments.
+        GlassPalace is nonpartisan — this tool promotes critical thinking by showing you what both sides see.
+      </div>
+    </div>
+  );
+}
+
+// ======= NETWORK GRAPH COMPONENT =======
+function NetworkGraph({ actors, setView }) {
+  const svgRef = useRef(null);
+  const tooltipRef = useRef(null);
+
+  useEffect(() => {
+    if (!actors || actors.length === 0 || !svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+
+    const width = svgRef.current.clientWidth || 800;
+    const height = 500;
+
+    // Build nodes and links
+    const nodeColors = {
+      politician: { pro: '#ef4444', opp: '#34d399' },
+      corporation: { pro: '#f97316', opp: '#22d3ee' },
+      organization: { pro: '#f59e0b', opp: '#60a5fa' },
+      government_agency: { pro: '#dc2626', opp: '#10b981' },
+      state_government: { pro: '#fb923c', opp: '#6ee7b7' },
+      international_body: { pro: '#e11d48', opp: '#2dd4bf' },
+      think_tank: { pro: '#d97706', opp: '#818cf8' },
+      individual: { pro: '#fbbf24', opp: '#a78bfa' },
+    };
+
+    const nodeSize = (influence) => Math.max(6, Math.min(20, influence * 2));
+
+    // Create category hub nodes (invisible centers for clustering)
+    const categoryHubs = ['surveillance', 'biometrics', 'digital_id', 'cbdc', 'censorship', 'ai_control', 'data_collection', 'financial_control'].map((cat, i) => ({
+      id: 'hub-' + cat,
+      type: 'hub',
+      category: cat,
+      label: cat.replace(/_/g, ' '),
+      x: width/2 + Math.cos(i * Math.PI * 2 / 8) * 150,
+      y: height/2 + Math.sin(i * Math.PI * 2 / 8) * 150,
+    }));
+
+    // Create actor nodes
+    const actorNodes = actors.slice(0, 60).map((a, i) => ({
+      id: 'actor-' + i,
+      label: a.name,
+      type: a.actor_type,
+      role: a.role,
+      category: a.category,
+      influence: a.influence_score || 5,
+      party: a.party,
+      state: a.state_code,
+      summary: a.action_summary,
+      legislator_id: a.legislator_id,
+      color: (nodeColors[a.actor_type] || nodeColors.individual)[a.role === 'opponent' ? 'opp' : 'pro'],
+      radius: nodeSize(a.influence_score || 5),
+    }));
+
+    const nodes = [...categoryHubs, ...actorNodes];
+
+    // Links: actors connect to their category hub
+    const links = actorNodes.map(a => ({
+      source: a.id,
+      target: 'hub-' + a.category,
+      strength: 0.3,
+    })).filter(l => nodes.find(n => n.id === l.target));
+
+    // Also connect actors in same category with same role (lighter links)
+    for (let i = 0; i < actorNodes.length; i++) {
+      for (let j = i + 1; j < actorNodes.length; j++) {
+        if (actorNodes[i].category === actorNodes[j].category && actorNodes[i].role === actorNodes[j].role && Math.random() < 0.3) {
+          links.push({ source: actorNodes[i].id, target: actorNodes[j].id, strength: 0.1 });
+        }
+      }
+    }
+
+    // Simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.strength > 0.2 ? 80 : 50).strength(d => d.strength))
+      .force('charge', d3.forceManyBody().strength(d => d.type === 'hub' ? -200 : -30))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(d => (d.radius || 10) + 3))
+      .force('x', d3.forceX(width / 2).strength(0.03))
+      .force('y', d3.forceY(height / 2).strength(0.03));
+
+    // Draw
+    const g = svg.append('g');
+
+    // Zoom
+    svg.call(d3.zoom().scaleExtent([0.3, 3]).on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    }));
+
+    // Links
+    const link = g.append('g').selectAll('line')
+      .data(links).enter().append('line')
+      .attr('stroke', d => d.strength > 0.2 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)')
+      .attr('stroke-width', d => d.strength > 0.2 ? 1 : 0.5);
+
+    // Hub labels
+    const hubLabel = g.append('g').selectAll('text')
+      .data(categoryHubs).enter().append('text')
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'rgba(255,255,255,0.25)')
+      .attr('font-size', '10px')
+      .attr('font-weight', '700')
+      .text(d => d.label.toUpperCase());
+
+    // Actor nodes
+    const node = g.append('g').selectAll('circle')
+      .data(actorNodes).enter().append('circle')
+      .attr('r', d => d.radius)
+      .attr('fill', d => d.color)
+      .attr('stroke', '#fff')
+      .attr('stroke-width', d => d.influence >= 8 ? 2 : 0.5)
+      .attr('stroke-opacity', d => d.influence >= 8 ? 0.8 : 0.3)
+      .attr('cursor', 'pointer')
+      .call(d3.drag()
+        .on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+        .on('end', (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+      );
+
+    // Node labels (only for high influence)
+    const nodeLabel = g.append('g').selectAll('text')
+      .data(actorNodes.filter(a => a.influence >= 7)).enter().append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', d => d.radius + 12)
+      .attr('fill', '#fff')
+      .attr('font-size', '9px')
+      .attr('font-weight', '600')
+      .attr('pointer-events', 'none')
+      .text(d => d.label.length > 20 ? d.label.slice(0, 18) + '...' : d.label);
+
+    // Tooltip
+    const tooltip = d3.select(tooltipRef.current);
+    node.on('mouseover', (event, d) => {
+      tooltip.classed('visible', true)
+        .style('left', (event.offsetX + 15) + 'px')
+        .style('top', (event.offsetY - 10) + 'px')
+        .html(`<strong style="color:${d.color}">${d.label}</strong><br/>
+          <span style="opacity:0.7">${d.type.replace(/_/g, ' ')} • ${d.role === 'opponent' ? 'Fighting Grid' : 'Pushing Grid'}</span><br/>
+          ${d.party ? '<span>Party: ' + d.party + '</span> ' : ''}${d.state ? '<span>State: ' + d.state + '</span>' : ''}<br/>
+          <span style="opacity:0.7">Influence: ${d.influence}/10</span><br/>
+          ${d.summary ? '<span style="font-size:0.72rem;opacity:0.8">' + d.summary.slice(0, 150) + '</span>' : ''}`);
+    }).on('mouseout', () => {
+      tooltip.classed('visible', false);
+    }).on('click', (event, d) => {
+      if (d.legislator_id) setView({ page: 'legislator', id: d.legislator_id });
+    });
+
+    // Tick
+    simulation.on('tick', () => {
+      link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      node.attr('cx', d => d.x).attr('cy', d => d.y);
+      hubLabel.attr('x', d => d.x).attr('y', d => d.y);
+      nodeLabel.attr('x', d => d.x).attr('y', d => d.y);
+    });
+
+    return () => simulation.stop();
+  }, [actors]);
+
+  return (
+    <div>
+      <div className="cg-network-legend">
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#ef4444'}}></div> Politicians (pro)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#34d399'}}></div> Politicians (opp)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#f97316'}}></div> Corporations (pro)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#22d3ee'}}></div> Corporations (opp)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#f59e0b'}}></div> Organizations (pro)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#60a5fa'}}></div> Organizations (opp)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#dc2626'}}></div> Gov Agencies</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#e11d48'}}></div> International</div>
+        <span style={{marginLeft:'auto',fontSize:'0.7rem',color:'var(--text-dim)'}}>Drag nodes • Scroll to zoom • Click politicians for profile</span>
+      </div>
+      <div className="cg-network-container">
+        <svg ref={svgRef}></svg>
+        <div className="cg-network-tooltip" ref={tooltipRef}></div>
+      </div>
+    </div>
+  );
+}
+
+// ======= SUBMIT EVIDENCE COMPONENT =======
+function SubmitEvidence() {
+  const [content, setContent] = useState('');
+  const [url, setUrl] = useState('');
+  const [status, setStatus] = useState(null); // null, 'submitting', 'success', 'error', 'rejected'
+  const [result, setResult] = useState(null);
+
+  const handleSubmit = async () => {
+    if (!content.trim() && !url.trim()) return;
+    setStatus('submitting');
+    setResult(null);
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ingest-evidence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: content.trim(),
+          source_url: url.trim(),
+          source_name: 'App submission',
+          submitted_by: 'user',
+        }),
+      });
+      const data = await res.json();
+      if (data.status === 'ingested') {
+        setStatus('success');
+        setResult(data);
+        setContent('');
+        setUrl('');
+      } else if (data.status === 'rejected') {
+        setStatus('rejected');
+        setResult(data);
+      } else if (data.error) {
+        setStatus('error');
+        setResult(data);
+      } else {
+        setStatus('success');
+        setResult(data);
+      }
+    } catch (e) {
+      setStatus('error');
+      setResult({ error: e.message });
+    }
+  };
+
+  return (
+    <div className="cg-submit-panel">
+      <h4>&#128233; Submit Evidence</h4>
+      <p style={{color:'var(--text-dim)',fontSize:'0.82rem',marginBottom:'0.75rem'}}>
+        Paste an article, news story, bill text, or any evidence of digital control grid activity. AI will analyze, score, and add it to the scorecard.
+      </p>
+      <textarea
+        className="cg-submit-input"
+        placeholder="Paste article text, news content, or describe the evidence..."
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        rows={4}
+      />
+      <div className="cg-submit-row">
+        <input
+          className="cg-submit-url"
+          placeholder="Source URL (optional)"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <button
+          className="cg-submit-btn"
+          onClick={handleSubmit}
+          disabled={status === 'submitting' || (!content.trim() && !url.trim())}
+        >
+          {status === 'submitting' ? 'Analyzing...' : 'Submit Evidence'}
+        </button>
+      </div>
+      {status === 'success' && result && (
+        <div className="cg-submit-status" style={{color:'#34d399'}}>
+          &#10003; {result.items_created} evidence item{result.items_created !== 1 ? 's' : ''} ingested. {result.submission_summary}
+        </div>
+      )}
+      {status === 'rejected' && result && (
+        <div className="cg-submit-status" style={{color:'#fbbf24'}}>
+          &#9888; {result.reason || 'Not relevant to control grid tracking.'}
+        </div>
+      )}
+      {status === 'error' && result && (
+        <div className="cg-submit-status" style={{color:'#f87171'}}>
+          &#10007; Error: {result.error || 'Submission failed'}
+        </div>
+      )}
+      <p style={{color:'var(--text-dim)',fontSize:'0.7rem',marginTop:'0.5rem'}}>
+        You can also email evidence to your ingest endpoint. Items expire after 14 days.
+      </p>
+    </div>
+  );
+}
+
+// ======= CONTROL GRID EVIDENCE SCORECARD =======
+function ControlGridPage({ setView }) {
+  const [evidence, setEvidence] = useState([]);
+  const [actors, setActors] = useState([]);
+  const [stateBreakdown, setStateBreakdown] = useState({});
+  const [compositeScore, setCompositeScore] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [categories, setCategories] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [lastGenerated, setLastGenerated] = useState(null);
+  const [expandedItem, setExpandedItem] = useState(null);
+  const [expandedActor, setExpandedActor] = useState(null);
+  const [actorsView, setActorsView] = useState('proponents');
+
+  const loadEvidence = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}?route=control-grid`, {
+        headers: { 'apikey': ANON_KEY }
+      });
+      const data = await res.json();
+      if (!data.error) {
+        setEvidence(data.evidence || []);
+        setActors(data.actors || []);
+        setStateBreakdown(data.state_breakdown || {});
+        setCompositeScore(data.composite_score || null);
+        setSummary(data.summary || null);
+        setCategories(data.categories || {});
+        setLastGenerated(data.last_generated);
+      }
+    } catch (e) {
+      console.error('Control grid load error:', e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadEvidence(); }, []);
+
+  const timeAgo = (d) => {
+    if (!d) return '';
+    const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+  };
+
+  const categoryLabel = (cat) => ({
+    surveillance: 'Surveillance', biometrics: 'Biometrics', digital_id: 'Digital ID',
+    cbdc: 'CBDC / Digital Currency', social_credit: 'Social Credit', censorship: 'Censorship',
+    ai_control: 'AI Control', data_collection: 'Data Collection',
+    travel_restriction: 'Travel Restriction', financial_control: 'Financial Control', other: 'Other',
+  })[cat] || cat;
+
+  const forItems = evidence.filter(e => e.evidence_type === 'for').sort((a, b) => b.score - a.score);
+  const againstItems = evidence.filter(e => e.evidence_type === 'against').sort((a, b) => a.score - b.score);
+
+  if (loading) {
+    return (
+      <div>
+        <div className="cg-header">
+          <h2>Digital Control Grid Evidence Scorecard</h2>
+        </div>
+        <div className="loading"><div className="spinner"></div><br/>Loading evidence data...</div>
+      </div>
+    );
+  }
+
+  const netScore = summary ? summary.net_score : 0;
+  const netSign = netScore > 0 ? '+' : '';
+
+  const bandColor = (band) => ({
+    low: '#34d399', guarded: '#60a5fa', transitional: '#fbbf24', high: '#f97316', severe: '#ef4444'
+  })[band] || 'var(--text-dim)';
+
+  const bandLabel = (band) => ({
+    low: 'Low Risk', guarded: 'Guarded Risk', transitional: 'Transitional Risk', high: 'High Risk', severe: 'Severe Risk'
+  })[band] || 'Unknown';
+
+  const varBarWidth = (score) => ((score + 5) / 10) * 100;
+  const varColor = (score) => score > 2 ? '#ef4444' : score > 0 ? '#f97316' : score === 0 ? '#6b7280' : score >= -2 ? '#60a5fa' : '#34d399';
+
+  return (
+    <div className="cg-scorecard">
+      <div className="cg-header">
+        <div>
+          <h2 style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+            Digital Control Grid Risk Assessment
+          </h2>
+          <p style={{color:'var(--text-dim)',fontSize:'0.85rem',marginTop:'0.25rem',maxWidth:600}}>
+            5-variable scoring model analyzing surveillance, behavioral enforcement, speech control, institutional guardrails, and implementation acceleration.
+          </p>
+          {lastGenerated && (
+            <p style={{color:'var(--text-dim)',fontSize:'0.75rem',marginTop:'0.25rem'}}>
+              Last updated: {timeAgo(lastGenerated)}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {evidence.length === 0 && !compositeScore ? (
+        <div className="card" style={{textAlign:'center',padding:'2.5rem'}}>
+          <p style={{fontSize:'1.1rem',color:'#fff',marginBottom:'0.5rem'}}>No Evidence Data Yet</p>
+          <p style={{color:'var(--text-dim)',fontSize:'0.9rem'}}>
+            Run "Scan Control Grid" from the admin panel. The scanner analyzes bills in the database, news feeds, and social media using a 5-variable risk model with evidence weighting.
+          </p>
+        </div>
+      ) : (
+        <div>
+          {/* === COMPOSITE RISK SCORE PANEL === */}
+          {compositeScore && (
+            <div className="cg-risk-panel">
+              <div className="cg-risk-gauge">
+                <div className={`cg-risk-circle ${compositeScore.interpretation_band}`}>
+                  <div className={`cg-risk-pct ${compositeScore.interpretation_band}`}>
+                    {Math.round(compositeScore.final_risk_pct)}%
+                  </div>
+                  <div className="cg-risk-band" style={{color: bandColor(compositeScore.interpretation_band)}}>
+                    {bandLabel(compositeScore.interpretation_band)}
+                  </div>
+                </div>
+                <div className="cg-risk-info">
+                  <div style={{fontSize:'1.1rem',fontWeight:800,color:'#fff',marginBottom:'0.3rem'}}>Final Risk Score</div>
+                  <div className="cg-risk-formula">
+                    Raw Score: {compositeScore.raw_score > 0 ? '+' : ''}{compositeScore.raw_score}/20 &rarr; Base: {Math.round(compositeScore.base_risk_pct)}% &times; {compositeScore.acceleration_multiplier}x = <strong style={{color: bandColor(compositeScore.interpretation_band)}}>{Math.round(compositeScore.final_risk_pct)}%</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5 Variable Breakdown */}
+              <div className="cg-variables">
+                {[
+                  { key: 'surveillance', label: 'Surveillance, Identity & Data', score: compositeScore.surveillance_score, rationale: compositeScore.surveillance_rationale },
+                  { key: 'behavioral', label: 'Behavioral Enforcement & Access', score: compositeScore.behavioral_score, rationale: compositeScore.behavioral_rationale },
+                  { key: 'speech', label: 'Speech & Narrative Control', score: compositeScore.speech_score, rationale: compositeScore.speech_rationale },
+                  { key: 'guardrails', label: 'Institutional Guardrails', score: compositeScore.guardrails_score, rationale: compositeScore.guardrails_rationale },
+                ].map(v => (
+                  <div className="cg-var-card" key={v.key}>
+                    <div className="cg-var-label">{v.label}</div>
+                    <div className="cg-var-score-row">
+                      <div className="cg-var-score" style={{color: varColor(v.score)}}>{v.score > 0 ? '+' : ''}{v.score}</div>
+                      <div className="cg-var-bar">
+                        <div className="cg-var-bar-fill" style={{
+                          width: `${varBarWidth(v.score)}%`,
+                          left: 0,
+                          background: `linear-gradient(90deg, #34d399 0%, #6b7280 50%, #ef4444 100%)`,
+                          opacity: 0.3
+                        }}></div>
+                        <div style={{
+                          position:'absolute', top:0, height:'100%', width:'4px', borderRadius:'2px',
+                          background: varColor(v.score), left: `calc(${varBarWidth(v.score)}% - 2px)`
+                        }}></div>
+                      </div>
+                    </div>
+                    {v.rationale && <div className="cg-var-rationale">{v.rationale}</div>}
+                  </div>
+                ))}
+
+                {/* Multiplier card spans full width */}
+                <div className="cg-multiplier-card">
+                  <div className="cg-var-label" style={{color:'#fbbf24'}}>&#9889; Implementation Acceleration Multiplier</div>
+                  <div className="cg-var-score-row">
+                    <div className="cg-var-score" style={{color:'#fbbf24'}}>{compositeScore.acceleration_multiplier}x</div>
+                    <div style={{fontSize:'0.82rem',color:'var(--text-dim)'}}>
+                      (Score: {compositeScore.acceleration_score > 0 ? '+' : ''}{compositeScore.acceleration_score})
+                      {compositeScore.acceleration_score > 2 ? ' — Rapid implementation momentum' :
+                       compositeScore.acceleration_score > 0 ? ' — Building momentum' :
+                       compositeScore.acceleration_score === 0 ? ' — Normal pace' :
+                       compositeScore.acceleration_score >= -2 ? ' — Facing resistance' :
+                       ' — Strong reversal underway'}
+                    </div>
+                  </div>
+                  {compositeScore.acceleration_rationale && <div className="cg-var-rationale">{compositeScore.acceleration_rationale}</div>}
+                </div>
+              </div>
+
+              {/* Overall Analysis */}
+              {compositeScore.overall_analysis && (
+                <div className="cg-overall-analysis">
+                  <strong style={{color:'#fff'}}>Overall Assessment:</strong> {compositeScore.overall_analysis}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Summary stats */}
+          {summary && (
+            <div className="feed-stats" style={{marginBottom:'1.5rem'}}>
+              <div className="feed-stat"><span className="feed-stat-value">{summary.total}</span> Evidence Items</div>
+              <div className="feed-stat" style={{color:'#f87171'}}>
+                <span className="feed-stat-value" style={{color:'#f87171'}}>{summary.for_count}</span> For Grid ({'+' + summary.for_score})
+              </div>
+              <div className="feed-stat" style={{color:'#34d399'}}>
+                <span className="feed-stat-value" style={{color:'#34d399'}}>{summary.against_count}</span> Against ({summary.against_score})
+              </div>
+            </div>
+          )}
+
+          {/* Two-column scorecard */}
+          <div className="cg-columns">
+            {/* FOR column */}
+            <div className="cg-column">
+              <div className="cg-column-title for-col">
+                <span style={{fontSize:'1.1rem'}}>&#9650;</span>
+                Evidence FOR the Control Grid
+              </div>
+              {forItems.map((item, i) => (
+                <React.Fragment key={item.id || 'f'+i}>
+                  <div className="cg-item" onClick={() => setExpandedItem(expandedItem === 'f'+i ? null : 'f'+i)}>
+                    <div style={{display:'flex',alignItems:'center',gap:'0.5rem',flex:1,minWidth:0}}>
+                      <span className={`cg-item-tag ${item.source_type}`}>{item.source_type === 'executive_order' ? 'EO' : item.source_type}</span>
+                      <span className="cg-item-title">{item.title}</span>
+                    </div>
+                    <span className="cg-item-score for-score">+{item.score}</span>
+                  </div>
+                  {expandedItem === 'f'+i && (
+                    <div className="cg-item-detail">
+                      <div>{item.summary}</div>
+                      <div className="cg-item-meta">
+                        {item.source_name && <span>Source: {item.source_name}</span>}
+                        {item.country && item.country !== 'US' && <span>Country: {item.country}</span>}
+                        <span>Category: {categoryLabel(item.category)}</span>
+                        {item.confidence && <span>Confidence: {Math.round(item.confidence * 100)}%</span>}
+                      </div>
+                      {item.ai_analysis && (
+                        <div style={{marginTop:'0.5rem',fontStyle:'italic',color:'var(--text-dim)'}}>{item.ai_analysis}</div>
+                      )}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+              {forItems.length === 0 && (
+                <div className="cg-item"><span className="cg-item-title" style={{color:'var(--text-dim)'}}>No evidence items</span></div>
+              )}
+            </div>
+
+            {/* AGAINST column */}
+            <div className="cg-column">
+              <div className="cg-column-title against-col">
+                <span style={{fontSize:'1.1rem'}}>&#9660;</span>
+                Evidence AGAINST the Control Grid (Policy Reversals)
+              </div>
+              {againstItems.map((item, i) => (
+                <React.Fragment key={item.id || 'a'+i}>
+                  <div className="cg-item" onClick={() => setExpandedItem(expandedItem === 'a'+i ? null : 'a'+i)}>
+                    <div style={{display:'flex',alignItems:'center',gap:'0.5rem',flex:1,minWidth:0}}>
+                      <span className={`cg-item-tag ${item.source_type}`}>{item.source_type === 'executive_order' ? 'EO' : item.source_type}</span>
+                      <span className="cg-item-title">{item.title}</span>
+                    </div>
+                    <span className="cg-item-score against-score">{item.score}</span>
+                  </div>
+                  {expandedItem === 'a'+i && (
+                    <div className="cg-item-detail">
+                      <div>{item.summary}</div>
+                      <div className="cg-item-meta">
+                        {item.source_name && <span>Source: {item.source_name}</span>}
+                        {item.country && item.country !== 'US' && <span>Country: {item.country}</span>}
+                        <span>Category: {categoryLabel(item.category)}</span>
+                        {item.confidence && <span>Confidence: {Math.round(item.confidence * 100)}%</span>}
+                      </div>
+                      {item.ai_analysis && (
+                        <div style={{marginTop:'0.5rem',fontStyle:'italic',color:'var(--text-dim)'}}>{item.ai_analysis}</div>
+                      )}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+              {againstItems.length === 0 && (
+                <div className="cg-item"><span className="cg-item-title" style={{color:'var(--text-dim)'}}>No evidence items</span></div>
+              )}
+            </div>
+          </div>
+
+          {/* Category Breakdown */}
+          {Object.keys(categories).length > 0 && (
+            <div>
+              <h3 style={{color:'#fff',fontSize:'1rem',fontWeight:700,marginTop:'2rem',marginBottom:'0.75rem'}}>Category Breakdown</h3>
+              <div className="cg-category-breakdown">
+                {Object.entries(categories).map(([cat, data]) => {
+                  const catNet = data.for_score + data.against_score;
+                  return (
+                    <div className="cg-cat-card" key={cat}>
+                      <div className="cg-cat-name">{categoryLabel(cat)}</div>
+                      <div className={`cg-cat-score ${catNet > 0 ? '' : ''}`} style={{color: catNet > 0 ? '#f87171' : catNet < 0 ? '#34d399' : 'var(--text-dim)'}}>
+                        {catNet > 0 ? '+' : ''}{catNet}
+                      </div>
+                      <div style={{fontSize:'0.65rem',color:'var(--text-dim)',marginTop:'0.2rem'}}>
+                        {data.for_count} for / {data.against_count} against
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Scale Legend */}
+          <div className="cg-scale-legend">
+            <span style={{color:'#34d399',fontWeight:600}}>-5 = Liberty Preserving</span>
+            <span style={{color:'var(--text-dim)'}}>0 = Neutral / Mixed</span>
+            <span style={{color:'#f87171',fontWeight:600}}>+5 = Control Grid Expansion</span>
+          </div>
+
+          {/* Interpretation Bands */}
+          {compositeScore && (
+            <div style={{display:'flex',gap:'0.3rem',marginTop:'0.75rem',fontSize:'0.68rem',fontWeight:600}}>
+              <div style={{flex:1,padding:'0.3rem',textAlign:'center',background:'rgba(52,211,153,0.1)',color:'#34d399',borderRadius:'4px'}}>0-20% Low</div>
+              <div style={{flex:1,padding:'0.3rem',textAlign:'center',background:'rgba(96,165,250,0.1)',color:'#60a5fa',borderRadius:'4px'}}>21-40% Guarded</div>
+              <div style={{flex:1,padding:'0.3rem',textAlign:'center',background:'rgba(251,191,36,0.1)',color:'#fbbf24',borderRadius:'4px'}}>41-60% Transitional</div>
+              <div style={{flex:1,padding:'0.3rem',textAlign:'center',background:'rgba(249,115,22,0.1)',color:'#f97316',borderRadius:'4px'}}>61-80% High</div>
+              <div style={{flex:1,padding:'0.3rem',textAlign:'center',background:'rgba(239,68,68,0.1)',color:'#ef4444',borderRadius:'4px'}}>81-100% Severe</div>
+            </div>
+          )}
+
+          {/* ===== ACTORS SECTION ===== */}
+          {actors.length > 0 && (() => {
+            const proponents = actors.filter(a => a.role === 'proponent');
+            const opponents = actors.filter(a => a.role === 'opponent');
+
+            const actorTypeLabel = (t) => ({
+              politician: 'Politicians & Legislators',
+              corporation: 'Corporations & Tech Companies',
+              organization: 'Organizations & Think Tanks',
+              government_agency: 'Government Agencies',
+              state_government: 'State Governments',
+              international_body: 'International Bodies',
+              think_tank: 'Think Tanks & Advocacy',
+            })[t] || t;
+
+            const actorTypeOrder = ['politician','corporation','organization','government_agency','state_government','international_body','think_tank'];
+
+            const groupByType = (list) => {
+              const groups = {};
+              list.forEach(a => {
+                const t = a.actor_type || 'other';
+                if (!groups[t]) groups[t] = [];
+                groups[t].push(a);
+              });
+              return actorTypeOrder.filter(t => groups[t]).map(t => [t, groups[t].sort((a,b) => (b.influence_score||0) - (a.influence_score||0))]);
+            };
+
+            const influenceTag = (score) => {
+              if (score >= 8) return { label: 'High Influence', cls: 'high' };
+              if (score >= 5) return { label: 'Med Influence', cls: 'med' };
+              return { label: 'Low Influence', cls: 'low' };
+            };
+
+            const renderActorCard = (actor, idx, prefix) => {
+              const inf = influenceTag(actor.influence_score || 0);
+              const key = prefix + idx;
+              const isExpanded = expandedActor === key;
+              return (
+                <div className="cg-actor-card" key={key} onClick={() => setExpandedActor(isExpanded ? null : key)}>
+                  <div className="cg-actor-card-top">
+                    <div className="cg-actor-name">
+                      {actor.legislator_id ? (
+                        <a href="#" onClick={(e) => { e.stopPropagation(); setView({ page: 'legislator', id: actor.legislator_id }); }}>{actor.name}</a>
+                      ) : actor.name}
+                    </div>
+                    <span className={`cg-actor-influence ${inf.cls}`}>{inf.label}</span>
+                  </div>
+                  <div className="cg-actor-meta">
+                    {actor.party && <span>{actor.party}</span>}
+                    {actor.state_code && <span>{actor.state_code}</span>}
+                    {actor.category && <span>{categoryLabel(actor.category)}</span>}
+                    {actor.involvement_type && <span>{actor.involvement_type}</span>}
+                  </div>
+                  {actor.action_summary && <div className="cg-actor-summary">{actor.action_summary}</div>}
+                  {isExpanded && actor.ai_analysis && (
+                    <div className="cg-actor-analysis">{actor.ai_analysis}</div>
+                  )}
+                </div>
+              );
+            };
+
+            const renderGroup = (list, prefix) => {
+              const grouped = groupByType(list);
+              if (grouped.length === 0) return <div style={{color:'var(--text-dim)',padding:'1rem',fontSize:'0.9rem'}}>No actors identified yet</div>;
+              return grouped.map(([type, items]) => (
+                <div className="cg-actor-type-group" key={type}>
+                  <div className="cg-actor-type-label">{actorTypeLabel(type)} ({items.length})</div>
+                  <div className="cg-actor-cards">
+                    {items.map((a, i) => renderActorCard(a, i, prefix + type))}
+                  </div>
+                </div>
+              ));
+            };
+
+            return (
+              <div className="cg-actors-section">
+                <h3 style={{color:'#fbbf24',fontSize:'1.3rem',fontWeight:800,marginBottom:'0.25rem',display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                  &#128373; Who's Behind It &amp; Who's Fighting It
+                </h3>
+                <p style={{color:'var(--text-dim)',fontSize:'0.82rem',marginBottom:'1.25rem'}}>
+                  AI analysis of bill sponsors, public statements, technology developers, and policy advocates — identifying who is pushing the digital control grid and who is actively resisting it.
+                </p>
+
+                {summary && summary.actor_count > 0 && (
+                  <div className="feed-stats" style={{marginBottom:'1.25rem'}}>
+                    <div className="feed-stat"><span className="feed-stat-value">{summary.actor_count}</span> Actors Identified</div>
+                    <div className="feed-stat" style={{color:'#f87171'}}>
+                      <span className="feed-stat-value" style={{color:'#f87171'}}>{summary.proponent_count || proponents.length}</span> Proponents
+                    </div>
+                    <div className="feed-stat" style={{color:'#34d399'}}>
+                      <span className="feed-stat-value" style={{color:'#34d399'}}>{summary.opponent_count || opponents.length}</span> Opponents
+                    </div>
+                  </div>
+                )}
+
+                {/* Toggle tabs */}
+                <div style={{display:'flex',gap:'0.5rem',marginBottom:'1.25rem'}}>
+                  <button
+                    onClick={() => setActorsView('proponents')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='proponents' ? 'rgba(239,68,68,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='proponents' ? '#f87171' : 'var(--text-dim)',
+                      borderColor: actorsView==='proponents' ? 'rgba(239,68,68,0.3)' : 'var(--border)',
+                    }}
+                  >&#9650; Pushing the Grid ({proponents.length})</button>
+                  <button
+                    onClick={() => setActorsView('opponents')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='opponents' ? 'rgba(16,185,129,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='opponents' ? '#34d399' : 'var(--text-dim)',
+                      borderColor: actorsView==='opponents' ? 'rgba(16,185,129,0.3)' : 'var(--border)',
+                    }}
+                  >&#9660; Fighting the Grid ({opponents.length})</button>
+                  <button
+                    onClick={() => setActorsView('states')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='states' ? 'rgba(245,158,11,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='states' ? '#fbbf24' : 'var(--text-dim)',
+                      borderColor: actorsView==='states' ? 'rgba(245,158,11,0.3)' : 'var(--border)',
+                    }}
+                  >&#127463; State Breakdown</button>
+                  <button
+                    onClick={() => setActorsView('network')}
+                    style={{
+                      padding:'0.5rem 1.25rem', borderRadius:'var(--radius)', border:'1px solid',
+                      cursor:'pointer', fontWeight:700, fontSize:'0.88rem', transition:'all 0.2s',
+                      background: actorsView==='network' ? 'rgba(139,92,246,0.15)' : 'var(--navy-mid)',
+                      color: actorsView==='network' ? '#a78bfa' : 'var(--text-dim)',
+                      borderColor: actorsView==='network' ? 'rgba(139,92,246,0.3)' : 'var(--border)',
+                    }}
+                  >&#128752; Network Graph</button>
+                </div>
+
+                {actorsView === 'proponents' && (
+                  <div>
+                    <div className="cg-actors-header proponent">&#9650; Pushing the Digital Control Grid</div>
+                    {renderGroup(proponents, 'pro-')}
+                  </div>
+                )}
+
+                {actorsView === 'opponents' && (
+                  <div>
+                    <div className="cg-actors-header opponent">&#9660; Fighting the Digital Control Grid</div>
+                    {renderGroup(opponents, 'opp-')}
+                  </div>
+                )}
+
+                {actorsView === 'states' && (
+                  <div className="cg-state-section">
+                    <div className="cg-state-header">&#127463; State-Level Breakdown</div>
+                    {Object.keys(stateBreakdown).length > 0 ? (
+                      <div className="cg-state-grid">
+                        {Object.entries(stateBreakdown)
+                          .sort((a,b) => (b[1].proponent_count + b[1].opponent_count) - (a[1].proponent_count + a[1].opponent_count))
+                          .map(([state, data]) => {
+                            const cls = data.proponent_count > data.opponent_count ? 'pro-dominant'
+                              : data.opponent_count > data.proponent_count ? 'opp-dominant' : 'mixed';
+                            return (
+                              <div className={`cg-state-card ${cls}`} key={state}>
+                                <div className="cg-state-name">{state}</div>
+                                <div className="cg-state-counts">
+                                  <span className="cg-state-pro">&#9650; {data.proponent_count} pushing</span>
+                                  <span className="cg-state-opp">&#9660; {data.opponent_count} fighting</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div style={{color:'var(--text-dim)',padding:'1rem',fontSize:'0.9rem'}}>No state-level data available yet. Run the scanner to populate.</div>
+                    )}
+                  </div>
+                )}
+
+                {actorsView === 'network' && (
+                  <NetworkGraph actors={[...proponents, ...opponents]} setView={setView} />
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Submit Evidence */}
+          <SubmitEvidence />
+
+          <div className="scanner-disclaimer" style={{marginTop:'1.5rem'}}>
+            <strong>Disclaimer:</strong> The Digital Control Grid Evidence Scorecard uses AI to analyze legislation, news, and social media for indicators of
+            digital surveillance and control infrastructure. Scores reflect AI assessment of implementation status, not editorial judgment.
+            Evidence items are sourced from real data including bills in the GlassPalace database, RSS news feeds, and social media.
+            This tool is for informational purposes — verify claims independently.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ======= APP =======
+function App() {
+  const [view, setView] = useState({ page: 'dashboard' });
+  const [user, setUser] = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const handleSearch = (query) => setView({ page: 'search', query });
+
+  const handleAuth = (authUser) => {
+    setUser(authUser);
+    // Check if onboarding needed (new user with no profile)
+    fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${authUser.id}&select=onboarding_complete`, {
+      headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${getToken()}` }
+    }).then(r => r.json()).then(data => {
+      if (!data || data.length === 0 || !data[0].onboarding_complete) {
+        setShowOnboarding(true);
+      }
+    }).catch(() => {});
+  };
+
+  const handleSignOut = () => {
+    const token = getToken();
+    if (token) authSignOut(token);
+    setAuthState(null, null);
+    setUser(null);
+    setView({ page: 'dashboard' });
+  };
+
+  let content;
+  switch (view.page) {
+    case 'dashboard': content = <Dashboard setView={setView} />; break;
+    case 'bills': content = <BillsList setView={setView} />; break;
+    case 'bill': content = <BillDetail id={view.id} setView={setView} />; break;
+    case 'legislators': content = <LegislatorsList setView={setView} />; break;
+    case 'legislator': content = <LegislatorDetail id={view.id} setView={setView} />; break;
+    case 'search': content = <SearchResults query={view.query} setView={setView} />; break;
+    case 'watchlist': content = <WatchlistPage setView={setView} user={user} />; break;
+    case 'spectrum': content = <SpectrumPage setView={setView} />; break;
+    case 'notifications': content = <NotificationPrefsPage user={user} />; break;
+    case 'scanner': content = <PsyOpScanner user={user} />; break;
+    case 'control-grid': content = <ControlGridPage setView={setView} />; break;
+    default: content = <Dashboard setView={setView} />;
+  }
+
+  return (
+    <div className="app">
+      <Header view={view} setView={setView} onSearch={handleSearch} user={user} onAuthClick={() => setShowAuth(true)} onSignOut={handleSignOut} />
+      <main className="main">{content}</main>
+      <footer className="footer">
+        <p>\u00a9 2026 GlassPalace. Civic Intelligence Platform.</p>
+        <p style={{marginTop:'0.25rem'}}>Defending the Constitution through transparency and accountability.</p>
+      </footer>
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} onAuth={handleAuth} />}
+      {showOnboarding && user && <OnboardingModal user={user} onClose={() => setShowOnboarding(false)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
