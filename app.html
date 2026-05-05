@@ -883,7 +883,7 @@
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useRef } = React;
 
 const API_BASE = 'https://vsocmojximnnlrzdmeoz.supabase.co/functions/v1/civic-api';
 const SUPABASE_URL = 'https://vsocmojximnnlrzdmeoz.supabase.co';
@@ -2902,6 +2902,281 @@ function PsyOpFeed() {
   );
 }
 
+// ======= NETWORK GRAPH COMPONENT =======
+function NetworkGraph({ actors, setView }) {
+  const svgRef = useRef(null);
+  const tooltipRef = useRef(null);
+
+  useEffect(() => {
+    if (!actors || actors.length === 0 || !svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+
+    const width = svgRef.current.clientWidth || 800;
+    const height = 500;
+
+    // Build nodes and links
+    const nodeColors = {
+      politician: { pro: '#ef4444', opp: '#34d399' },
+      corporation: { pro: '#f97316', opp: '#22d3ee' },
+      organization: { pro: '#f59e0b', opp: '#60a5fa' },
+      government_agency: { pro: '#dc2626', opp: '#10b981' },
+      state_government: { pro: '#fb923c', opp: '#6ee7b7' },
+      international_body: { pro: '#e11d48', opp: '#2dd4bf' },
+      think_tank: { pro: '#d97706', opp: '#818cf8' },
+      individual: { pro: '#fbbf24', opp: '#a78bfa' },
+    };
+
+    const nodeSize = (influence) => Math.max(6, Math.min(20, influence * 2));
+
+    // Create category hub nodes (invisible centers for clustering)
+    const categoryHubs = ['surveillance', 'biometrics', 'digital_id', 'cbdc', 'censorship', 'ai_control', 'data_collection', 'financial_control'].map((cat, i) => ({
+      id: 'hub-' + cat,
+      type: 'hub',
+      category: cat,
+      label: cat.replace(/_/g, ' '),
+      x: width/2 + Math.cos(i * Math.PI * 2 / 8) * 150,
+      y: height/2 + Math.sin(i * Math.PI * 2 / 8) * 150,
+    }));
+
+    // Create actor nodes
+    const actorNodes = actors.slice(0, 60).map((a, i) => ({
+      id: 'actor-' + i,
+      label: a.name,
+      type: a.actor_type,
+      role: a.role,
+      category: a.category,
+      influence: a.influence_score || 5,
+      party: a.party,
+      state: a.state_code,
+      summary: a.action_summary,
+      legislator_id: a.legislator_id,
+      color: (nodeColors[a.actor_type] || nodeColors.individual)[a.role === 'opponent' ? 'opp' : 'pro'],
+      radius: nodeSize(a.influence_score || 5),
+    }));
+
+    const nodes = [...categoryHubs, ...actorNodes];
+
+    // Links: actors connect to their category hub
+    const links = actorNodes.map(a => ({
+      source: a.id,
+      target: 'hub-' + a.category,
+      strength: 0.3,
+    })).filter(l => nodes.find(n => n.id === l.target));
+
+    // Also connect actors in same category with same role (lighter links)
+    for (let i = 0; i < actorNodes.length; i++) {
+      for (let j = i + 1; j < actorNodes.length; j++) {
+        if (actorNodes[i].category === actorNodes[j].category && actorNodes[i].role === actorNodes[j].role && Math.random() < 0.3) {
+          links.push({ source: actorNodes[i].id, target: actorNodes[j].id, strength: 0.1 });
+        }
+      }
+    }
+
+    // Simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.strength > 0.2 ? 80 : 50).strength(d => d.strength))
+      .force('charge', d3.forceManyBody().strength(d => d.type === 'hub' ? -200 : -30))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(d => (d.radius || 10) + 3))
+      .force('x', d3.forceX(width / 2).strength(0.03))
+      .force('y', d3.forceY(height / 2).strength(0.03));
+
+    // Draw
+    const g = svg.append('g');
+
+    // Zoom
+    svg.call(d3.zoom().scaleExtent([0.3, 3]).on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    }));
+
+    // Links
+    const link = g.append('g').selectAll('line')
+      .data(links).enter().append('line')
+      .attr('stroke', d => d.strength > 0.2 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)')
+      .attr('stroke-width', d => d.strength > 0.2 ? 1 : 0.5);
+
+    // Hub labels
+    const hubLabel = g.append('g').selectAll('text')
+      .data(categoryHubs).enter().append('text')
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'rgba(255,255,255,0.25)')
+      .attr('font-size', '10px')
+      .attr('font-weight', '700')
+      .text(d => d.label.toUpperCase());
+
+    // Actor nodes
+    const node = g.append('g').selectAll('circle')
+      .data(actorNodes).enter().append('circle')
+      .attr('r', d => d.radius)
+      .attr('fill', d => d.color)
+      .attr('stroke', '#fff')
+      .attr('stroke-width', d => d.influence >= 8 ? 2 : 0.5)
+      .attr('stroke-opacity', d => d.influence >= 8 ? 0.8 : 0.3)
+      .attr('cursor', 'pointer')
+      .call(d3.drag()
+        .on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+        .on('end', (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+      );
+
+    // Node labels (only for high influence)
+    const nodeLabel = g.append('g').selectAll('text')
+      .data(actorNodes.filter(a => a.influence >= 7)).enter().append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', d => d.radius + 12)
+      .attr('fill', '#fff')
+      .attr('font-size', '9px')
+      .attr('font-weight', '600')
+      .attr('pointer-events', 'none')
+      .text(d => d.label.length > 20 ? d.label.slice(0, 18) + '...' : d.label);
+
+    // Tooltip
+    const tooltip = d3.select(tooltipRef.current);
+    node.on('mouseover', (event, d) => {
+      tooltip.classed('visible', true)
+        .style('left', (event.offsetX + 15) + 'px')
+        .style('top', (event.offsetY - 10) + 'px')
+        .html(`<strong style="color:${d.color}">${d.label}</strong><br/>
+          <span style="opacity:0.7">${d.type.replace(/_/g, ' ')} • ${d.role === 'opponent' ? 'Fighting Grid' : 'Pushing Grid'}</span><br/>
+          ${d.party ? '<span>Party: ' + d.party + '</span> ' : ''}${d.state ? '<span>State: ' + d.state + '</span>' : ''}<br/>
+          <span style="opacity:0.7">Influence: ${d.influence}/10</span><br/>
+          ${d.summary ? '<span style="font-size:0.72rem;opacity:0.8">' + d.summary.slice(0, 150) + '</span>' : ''}`);
+    }).on('mouseout', () => {
+      tooltip.classed('visible', false);
+    }).on('click', (event, d) => {
+      if (d.legislator_id) setView({ page: 'legislator', id: d.legislator_id });
+    });
+
+    // Tick
+    simulation.on('tick', () => {
+      link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      node.attr('cx', d => d.x).attr('cy', d => d.y);
+      hubLabel.attr('x', d => d.x).attr('y', d => d.y);
+      nodeLabel.attr('x', d => d.x).attr('y', d => d.y);
+    });
+
+    return () => simulation.stop();
+  }, [actors]);
+
+  return (
+    <div>
+      <div className="cg-network-legend">
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#ef4444'}}></div> Politicians (pro)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#34d399'}}></div> Politicians (opp)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#f97316'}}></div> Corporations (pro)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#22d3ee'}}></div> Corporations (opp)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#f59e0b'}}></div> Organizations (pro)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#60a5fa'}}></div> Organizations (opp)</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#dc2626'}}></div> Gov Agencies</div>
+        <div className="cg-network-legend-item"><div className="cg-network-legend-dot" style={{background:'#e11d48'}}></div> International</div>
+        <span style={{marginLeft:'auto',fontSize:'0.7rem',color:'var(--text-dim)'}}>Drag nodes • Scroll to zoom • Click politicians for profile</span>
+      </div>
+      <div className="cg-network-container">
+        <svg ref={svgRef}></svg>
+        <div className="cg-network-tooltip" ref={tooltipRef}></div>
+      </div>
+    </div>
+  );
+}
+
+// ======= SUBMIT EVIDENCE COMPONENT =======
+function SubmitEvidence() {
+  const [content, setContent] = useState('');
+  const [url, setUrl] = useState('');
+  const [status, setStatus] = useState(null); // null, 'submitting', 'success', 'error', 'rejected'
+  const [result, setResult] = useState(null);
+
+  const handleSubmit = async () => {
+    if (!content.trim() && !url.trim()) return;
+    setStatus('submitting');
+    setResult(null);
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ingest-evidence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: content.trim(),
+          source_url: url.trim(),
+          source_name: 'App submission',
+          submitted_by: 'user',
+        }),
+      });
+      const data = await res.json();
+      if (data.status === 'ingested') {
+        setStatus('success');
+        setResult(data);
+        setContent('');
+        setUrl('');
+      } else if (data.status === 'rejected') {
+        setStatus('rejected');
+        setResult(data);
+      } else if (data.error) {
+        setStatus('error');
+        setResult(data);
+      } else {
+        setStatus('success');
+        setResult(data);
+      }
+    } catch (e) {
+      setStatus('error');
+      setResult({ error: e.message });
+    }
+  };
+
+  return (
+    <div className="cg-submit-panel">
+      <h4>&#128233; Submit Evidence</h4>
+      <p style={{color:'var(--text-dim)',fontSize:'0.82rem',marginBottom:'0.75rem'}}>
+        Paste an article, news story, bill text, or any evidence of digital control grid activity. AI will analyze, score, and add it to the scorecard.
+      </p>
+      <textarea
+        className="cg-submit-input"
+        placeholder="Paste article text, news content, or describe the evidence..."
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        rows={4}
+      />
+      <div className="cg-submit-row">
+        <input
+          className="cg-submit-url"
+          placeholder="Source URL (optional)"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <button
+          className="cg-submit-btn"
+          onClick={handleSubmit}
+          disabled={status === 'submitting' || (!content.trim() && !url.trim())}
+        >
+          {status === 'submitting' ? 'Analyzing...' : 'Submit Evidence'}
+        </button>
+      </div>
+      {status === 'success' && result && (
+        <div className="cg-submit-status" style={{color:'#34d399'}}>
+          &#10003; {result.items_created} evidence item{result.items_created !== 1 ? 's' : ''} ingested. {result.submission_summary}
+        </div>
+      )}
+      {status === 'rejected' && result && (
+        <div className="cg-submit-status" style={{color:'#fbbf24'}}>
+          &#9888; {result.reason || 'Not relevant to control grid tracking.'}
+        </div>
+      )}
+      {status === 'error' && result && (
+        <div className="cg-submit-status" style={{color:'#f87171'}}>
+          &#10007; Error: {result.error || 'Submission failed'}
+        </div>
+      )}
+      <p style={{color:'var(--text-dim)',fontSize:'0.7rem',marginTop:'0.5rem'}}>
+        You can also email evidence to your ingest endpoint. Items expire after 14 days.
+      </p>
+    </div>
+  );
+}
+
 // ======= CONTROL GRID EVIDENCE SCORECARD =======
 function ControlGridPage({ setView }) {
   const [evidence, setEvidence] = useState([]);
@@ -3401,6 +3676,9 @@ function ControlGridPage({ setView }) {
               </div>
             );
           })()}
+
+          {/* Submit Evidence */}
+          <SubmitEvidence />
 
           <div className="scanner-disclaimer" style={{marginTop:'1.5rem'}}>
             <strong>Disclaimer:</strong> The Digital Control Grid Evidence Scorecard uses AI to analyze legislation, news, and social media for indicators of
